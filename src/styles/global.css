@@ -127,6 +127,11 @@ hr { border: none; border-top: 1px solid var(--line); margin: 2.5rem 0; }
 @media (min-width: 52rem)  { .grid--3 { grid-template-columns: repeat(3, 1fr); } }
 
 /* tag chips */
+.install { display: block; margin-top: .55rem; padding: .4rem .65rem; border-radius: 8px; background: var(--surface-2); color: var(--accent); font-size: .78rem; overflow-x: auto; white-space: nowrap; }
+.tag.link { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 40%, var(--line)); text-decoration: none; }
+.tag.link:hover { background: color-mix(in oklab, var(--accent) 14%, transparent); }
+.card h3 a { color: inherit; text-decoration: none; }
+.card h3 a:hover { color: var(--accent); }
 .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.25rem; }
 .tag  { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted);
         border: 1px solid var(--line); border-radius: 999px; padding: 0.1rem 0.55rem; }

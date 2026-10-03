@@ -14,6 +14,11 @@ const CVES = [
   { id: 'CVE-2025-50862', title: 'ADB backup data exposure', text: 'Lotus Cars Android app 1.2.8: allowBackup=true in the manifest allows user data to be pulled over ADB backup on rooted or debug-enabled devices.' },
 ];
 
+const TOOLS = [
+  { t: 'Hayabusa Lens', d: 'A dashboard for Hayabusa and Chainsaw with a 3D attack map and an AI investigator that keeps an audit trail of every question it asks.', install: 'pipx install hayabusa-lens', pypi: 'https://pypi.org/project/hayabusa-lens/', repo: 'https://github.com/JackSessions/hayabusa-lens', post: '/blog/hayabusa-lens-from-evtx-to-an-attack-story/' },
+  { t: 'PhantomTrace', d: 'A read-only NTFS checker that compares the MFT, cluster bitmap and run lists and flags where they disagree, a possible sign of tampering.', install: 'pipx install phantom-trace-ntfs', pypi: 'https://pypi.org/project/phantom-trace-ntfs/', repo: 'https://github.com/JackSessions/PhantomTrace', post: '/blog/phantomtrace-checking-whether-ntfs-agrees-with-itself/' },
+];
+
 const FOCUS = [
   { t: 'Mobile security', d: 'Android APK analysis, iOS bootchain and Secure Enclave research, and runtime instrumentation.', link: '/talks' },
   { t: 'Anti-forensics & counterintelligence', d: 'How devices and people hide, spoof and mislead, and how investigators see through it.', link: '/talks' },
@@ -53,6 +58,24 @@ const FOCUS = [
             <h3>{f.t}</h3>
             <p>{f.d}</p>
           </a>
+        ))}
+      </div>
+
+      <h3>Published tools</h3>
+      <p class="muted more" style="margin-top:0">At 22, two open-source DFIR tools of mine are published on PyPI. <a href="/blog/at-22-two-dfir-tools-on-pypi-and-just-the-start/">Why that matters to me</a>.</p>
+      <div class="grid grid--2 focus">
+        {TOOLS.map((t) => (
+          <div class="card">
+            <span class="meta">on PyPI</span>
+            <h3><a href={t.post}>{t.t}</a></h3>
+            <p>{t.d}</p>
+            <code class="install">{t.install}</code>
+            <div class="tags">
+              <a class="tag link" href={t.post}>write-up</a>
+              <a class="tag link" href={t.repo} target="_blank" rel="noopener">GitHub ↗</a>
+              <a class="tag link" href={t.pypi} target="_blank" rel="noopener">PyPI ↗</a>
+            </div>
+          </div>
         ))}
       </div>
 

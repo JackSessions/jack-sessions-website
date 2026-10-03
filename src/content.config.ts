@@ -40,6 +40,8 @@ const projects = defineCollection({
     date: z.coerce.date().optional(),
     repoUrl: z.string().optional(),
     url: z.string().optional(),         // write-up, release, CVE link
+    pypiUrl: z.string().optional(),     // package page, e.g. https://pypi.org/project/name/
+    install: z.string().optional(),     // one-line install command shown on the card
     status: z.enum(['active', 'released', 'archived', 'research']).default('active'),
     featured: z.boolean().default(false),
     tags: z.array(z.string()).default([]),

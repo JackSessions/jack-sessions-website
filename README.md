@@ -67,6 +67,17 @@ Useful commands: `npm run build` (output in `dist/`), `npm run preview` (build a
 | Slides | `public/slides/` (link them with `slidesUrl` in a talk) |
 | Generators for the music | `tools/` |
 
+## Publishing a blog post or a project
+
+```bash
+python3 tools/new_post.py post "Title" --tags DFIR,tools --desc "One sentence for the card"
+python3 tools/new_post.py project "Tool name" --repo https://github.com/you/tool --status released --featured --desc "One sentence"
+```
+
+Each command prints the new markdown file. Write in it, put screenshots in `public/blog/` and link them as `![alt](/blog/name.png)`, preview with `npm run dev`, then `git add -A && git commit && git push`. Cloudflare redeploys by itself in about a minute.
+
+**Release checklist for a tool** (so the blog, the repo and PyPI tell the same story): publish the GitHub release and wait for the PyPI page to go live, then publish the post and project entry that link to it, and share.
+
 ## Deploy it on Cloudflare
 
 Push to GitHub and Cloudflare builds and publishes the site on every commit to `main`.

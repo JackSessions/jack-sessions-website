@@ -1,11 +1,14 @@
 ---
 title: "PhantomTrace"
-description: "Experimental NTFS forensics prototype that cross-checks the MFT against allocation data to flag records where the layers disagree, a possible sign of anti-forensic tampering."
-date: 2026-07-15
+description: "Read-only NTFS consistency checker for DFIR. Compares the MFT, cluster bitmap and run lists and flags where they disagree, a possible sign of tampering. On PyPI."
+date: 2026-10-03
 repoUrl: "https://github.com/JackSessions/PhantomTrace"
-status: "research"
+url: "/blog/phantomtrace-checking-whether-ntfs-agrees-with-itself"
+pypiUrl: "https://pypi.org/project/phantom-trace-ntfs/"
+install: "pipx install phantom-trace-ntfs"
+status: "released"
 featured: true
 tags: ["DFIR", "NTFS", "anti-forensics", "python"]
 ---
 
-A Python prototype for spotting inconsistencies between NTFS layers. See the repository for usage and known limitations.
+`pipx install phantom-trace-ntfs`. A read-only tool with a GUI and an HTML report. Findings are leads to verify, not proof. [Read the write-up](/blog/phantomtrace-checking-whether-ntfs-agrees-with-itself) or see the [package on PyPI](https://pypi.org/project/phantom-trace-ntfs/).

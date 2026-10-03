@@ -21,21 +21,20 @@ const projects = (await getCollection('projects')).sort((a, b) => {
         <p class="muted">No projects yet. Add one at <code>src/content/projects/your-tool.md</code>.</p>
       ) : (
         <div class="grid grid--2">
-          {projects.map((pr) => {
-            const link = pr.data.repoUrl || pr.data.url;
-            const Tag = link ? 'a' : 'div';
-            return (
-              <Tag class="card" href={link} target={link?.startsWith('http') ? '_blank' : undefined} rel="noopener">
-                <span class="meta">{pr.data.status}{pr.data.featured ? ' · featured' : ''}</span>
-                <h3>{pr.data.title}</h3>
-                <p>{pr.data.description}</p>
-                <div class="tags">
-                  {pr.data.tags.map((tag) => <span class="tag">{tag}</span>)}
-                  {pr.data.repoUrl && <span class="tag">repo ↗</span>}
-                </div>
-              </Tag>
-            );
-          })}
+          {projects.map((pr) => (
+            <div class="card">
+              <span class="meta">{pr.data.status}{pr.data.featured ? ' · featured' : ''}</span>
+              <h3>{(pr.data.url || pr.data.repoUrl) ? <a href={pr.data.url || pr.data.repoUrl} target={(pr.data.url || pr.data.repoUrl).startsWith('http') ? '_blank' : undefined} rel="noopener">{pr.data.title}</a> : pr.data.title}</h3>
+              <p>{pr.data.description}</p>
+              {pr.data.install && <code class="install">{pr.data.install}</code>}
+              <div class="tags">
+                {pr.data.tags.map((tag) => <span class="tag">{tag}</span>)}
+                {pr.data.url && <a class="tag link" href={pr.data.url} target={pr.data.url.startsWith('http') ? '_blank' : undefined} rel="noopener">write-up</a>}
+                {pr.data.repoUrl && <a class="tag link" href={pr.data.repoUrl} target="_blank" rel="noopener">GitHub ↗</a>}
+                {pr.data.pypiUrl && <a class="tag link" href={pr.data.pypiUrl} target="_blank" rel="noopener">PyPI ↗</a>}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
