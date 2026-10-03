@@ -7,9 +7,33 @@ const projects = (await getCollection('projects')).sort((a, b) => {
   if (f !== 0) return f;
   return (b.data.date?.valueOf() ?? 0) - (a.data.date?.valueOf() ?? 0);
 });
+
+// Structured data so Google can read each project as a real piece of software, linked to its GitHub
+// repo and (where published) its PyPI package, authored by Jack Sessions.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  itemListElement: projects
+    .filter((pr) => pr.data.repoUrl || pr.data.pypiUrl)
+    .map((pr, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'SoftwareSourceCode',
+        name: pr.data.title,
+        description: pr.data.description,
+        codeRepository: pr.data.repoUrl,
+        url: pr.data.repoUrl,
+        ...(pr.data.pypiUrl ? { downloadUrl: pr.data.pypiUrl } : {}),
+        author: { '@type': 'Person', name: 'Jack Sessions', url: 'https://jacksessions.dev' },
+        keywords: pr.data.tags.join(', '),
+      },
+    })),
+};
 ---
 
 <Page title="Projects" description="Open-source tooling, CVEs, and security research by Jack Sessions.">
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   <section class="section">
     <div class="wrap">
       <div class="section-head">
