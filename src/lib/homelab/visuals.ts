@@ -5,11 +5,11 @@ type THREE = typeof import('three');
 export function makeVisual(THREE: THREE, kind: string, color: string, members: string[] = []): T.Group {
   const g = new THREE.Group();
   const c = new THREE.Color(color);
-  const mat = (col: THREE.ColorRepresentation = color, e = 0.35) =>
+  const mat = (col: T.ColorRepresentation = color, e = 0.35) =>
     new THREE.MeshStandardMaterial({ color: new THREE.Color(col).multiplyScalar(0.5), emissive: new THREE.Color(col), emissiveIntensity: e, metalness: 0.4, roughness: 0.5 });
-  const basic = (col: THREE.ColorRepresentation) => new THREE.MeshBasicMaterial({ color: col });
-  const edges = (geo: T.BufferGeometry, col: THREE.ColorRepresentation = color) => new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: col }));
-  const box = (w: number, h: number, d: number, x = 0, z = 0, col: THREE.ColorRepresentation = color, y0 = 0.18) => {
+  const basic = (col: T.ColorRepresentation) => new THREE.MeshBasicMaterial({ color: col });
+  const edges = (geo: T.BufferGeometry, col: T.ColorRepresentation = color) => new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: col }));
+  const box = (w: number, h: number, d: number, x = 0, z = 0, col: T.ColorRepresentation = color, y0 = 0.18) => {
     const geo = new THREE.BoxGeometry(w, h, d); const m = new THREE.Mesh(geo, mat(col)); m.position.set(x, h / 2 + y0, z); m.add(edges(geo, col)); g.add(m); return m;
   };
   const add = <O extends T.Object3D>(o: O, x = 0, y = 0, z = 0) => { o.position.set(x, y, z); g.add(o); return o; };

@@ -1,64 +1,85 @@
-# Astro Starter Kit: Blog
+# jack.sessions
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/astro-blog-starter-template)
+My personal site: security research, talks, a 3D homelab map and music.
 
-![Astro Template Preview](https://github.com/withastro/astro/assets/2244813/ff10799f-a816-4703-b967-c78997e8323d)
+```json
+{
+  "name": "jack.sessions",
+  "owner": "Jack Sessions",
+  "about": "Security researcher: mobile security, DFIR, anti-forensics, counterintelligence. CS student at UNSW.",
+  "live": "https://jacksessions.dev",
+  "repo": "https://github.com/JackSessions/jack-sessions-website",
 
-<!-- dash-content-start -->
+  "pages": {
+    "home":     "night-vision hero, typing bio, certs",
+    "blog":     "writing on mobile pentesting, music, goals",
+    "talks":    "12 talks and panels with slides and recordings",
+    "projects": "PhantomTrace, CVE advisories, SOC/DFIR, agents",
+    "lab":      "5 interactive 3D maps of my Proxmox homelab + range builder + build-your-own guide",
+    "videos":   "latest uploads from my YouTube channel",
+    "music":    "tracks I generated with code, plus a portable-console visualiser",
+    "about":    "bio, research, photo reel, collab buttons"
+  },
 
-Create a blog with Astro and deploy it on Cloudflare Workers as a [static website](https://developers.cloudflare.com/workers/static-assets/).
+  "stack": {
+    "framework": "Astro 5 (static pages, content collections)",
+    "3d":        "three.js (lab maps, fighter jets, range builder)",
+    "hosting":   "Cloudflare Workers (static assets)",
+    "language":  "Astro, TypeScript, plain CSS. No UI framework."
+  },
 
-Features:
+  "how_i_built_it": [
+    "Started from Astro's blog template and rebuilt every page",
+    "Talks, blog posts and projects are markdown files in src/content",
+    "Lab maps, range builder rules and the guide are data files in src/data and src/lib",
+    "Music is generated with Python synth scripts in tools/ (no samples, no AI vocals)",
+    "Built with AI assistance (Claude); design, content and decisions are mine"
+  ],
 
-- ✅ Minimal styling (make it your own!)
-- ✅ 100/100 Lighthouse performance
-- ✅ SEO-friendly with canonical URLs and OpenGraph data
-- ✅ Sitemap support
-- ✅ RSS Feed support
-- ✅ Markdown & MDX support
-- ✅ Built-in Observability logging
+  "cost": {
+    "domain": "$12",
+    "everything_else": "free tools and my own time"
+  },
 
-<!-- dash-content-end -->
-
-## Getting Started
-
-Outside of this repo, you can start a new project with this template using [C3](https://developers.cloudflare.com/pages/get-started/c3/) (the `create-cloudflare` CLI):
-
-```bash
-npm create cloudflare@latest -- --template=cloudflare/templates/astro-blog-starter-template
+  "license": "Content (writing, music, photos) © Jack Sessions"
+}
 ```
 
-A live public deployment of this template is available at [https://astro-blog-starter-template.templates.workers.dev](https://astro-blog-starter-template.templates.workers.dev)
+## Run it locally
 
-## 🚀 Project Structure
+```bash
+git clone https://github.com/JackSessions/jack-sessions-website
+cd jack-sessions-website
+npm install
+npm run dev          # http://localhost:4321
+```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+Useful commands: `npm run build` (output in `dist/`), `npm run preview` (build and run it the way Cloudflare does), `npm run check` (build, type-check, dry-run deploy).
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+## Where things live
 
-The `src/content/` directory contains "collections" of related Markdown and MDX documents. Use `getCollection()` to retrieve posts from `src/content/blog/`, and type-check your frontmatter using an optional schema. See [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/) to learn more.
+| What | Where |
+|---|---|
+| Talks, blog posts, projects | `src/content/*` (one markdown file each) |
+| Homelab maps, build-your-own guide | `src/data/homelab.ts`, `src/data/labguide.ts` |
+| Range-builder rules and 3D models | `src/lib/homelab/` |
+| Music list and player | `src/data/music.ts`, `public/music/` |
+| Slides | `public/slides/` (link them with `slidesUrl` in a talk) |
+| Generators for the music | `tools/` |
 
-Any static assets, like images, can be placed in the `public/` directory.
+## Deploy it on Cloudflare
 
-## 🧞 Commands
+Push to GitHub and Cloudflare builds and publishes the site on every commit to `main`.
 
-All commands are run from the root of the project, from a terminal:
+1. **Connect the repo.** In the Cloudflare dashboard go to *Workers & Pages* → *Create* → *Import a repository*, and pick the repo. Or use the one-click button:
+   [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/JackSessions/jack-sessions-website)
+2. **Build settings** (if it asks): build command `npm run build`, deploy command `npx wrangler deploy`.
+3. **Add your domain.** Open the project → *Settings* → *Domains & Routes* → *Add* → *Custom domain*. If the domain is bought through Cloudflare, it is set up for you.
+4. **Tell the site its address.** Change `site` in `astro.config.mjs` to your domain so the sitemap, RSS feed and link previews are right.
+5. **Update the site.** `git add -A && git commit -m "..." && git push`, and Cloudflare redeploys by itself in about a minute.
 
-| Command                           | Action                                           |
-| :-------------------------------- | :----------------------------------------------- |
-| `npm install`                     | Installs dependencies                            |
-| `npm run dev`                     | Starts local dev server at `localhost:4321`      |
-| `npm run build`                   | Build your production site to `./dist/`          |
-| `npm run preview`                 | Preview your build locally, before deploying     |
-| `npm run astro ...`               | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help`         | Get help using the Astro CLI                     |
-| `npm run build && npm run deploy` | Deploy your production site to Cloudflare        |
-| `npm wrangler tail`               | View real-time logs for all Workers              |
-
-## 👀 Want to learn more?
-
-Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Docs: [Workers static assets](https://developers.cloudflare.com/workers/static-assets/) · [Astro on Cloudflare](https://docs.astro.build/en/guides/deploy/cloudflare/) · [Custom domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/) · [Workers builds](https://developers.cloudflare.com/workers/ci-cd/builds/)
 
 ## Credit
 
-This theme is based off of the lovely [Bear Blog](https://github.com/HermanMartinus/bearblog/).
+Created and maintained by **Jack Sessions**. Started from [Astro's blog template](https://github.com/cloudflare/templates/tree/main/astro-blog-starter-template), itself based on [Bear Blog](https://github.com/HermanMartinus/bearblog/). 3D by [three.js](https://threejs.org/).

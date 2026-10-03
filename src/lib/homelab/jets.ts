@@ -69,7 +69,7 @@ export function createAir(THREE: THREE) {
     for (let i = fx.length - 1; i >= 0; i--) {
       const f = fx[i]; f.life += dt; const u = f.life / f.max;
       if (f.kind === 'missile') { const m = f.m as T.Mesh; m.position.lerpVectors(f.from!, f.to!, Math.min(1, u)); m.lookAt(f.to!); m.rotateX(Math.PI / 2); if (u >= 1) { spawnBoom(f.to!); root.remove(m); fx.splice(i, 1); } }
-      else if (f.kind === 'flare') { f.m.position.addScaledVector(f.vel!, dt); (f.m as T.Mesh).material.opacity = 1 - u; ((f.m as T.Mesh).material as T.Material).transparent = true; if (u >= 1) { root.remove(f.m); fx.splice(i, 1); } }
+      else if (f.kind === 'flare') { f.m.position.addScaledVector(f.vel!, dt); { const fm = (f.m as T.Mesh).material as T.MeshBasicMaterial; fm.opacity = 1 - u; fm.transparent = true; } if (u >= 1) { root.remove(f.m); fx.splice(i, 1); } }
       else { const s = 1 + u * 5; f.m.scale.setScalar(s); ((f.m as T.Mesh).material as T.MeshBasicMaterial).opacity = 0.9 * (1 - u); if (u >= 1) { root.remove(f.m); fx.splice(i, 1); } }
     }
   }
