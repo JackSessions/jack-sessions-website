@@ -1,0 +1,102 @@
+---
+import Page from '../layouts/Page.astro';
+import { YOUTUBE_CHANNEL_ID } from '../consts';
+import { VIDEOS } from '../data/videos';
+
+type Video = { id: string; title: string };
+let videos: Video[] = [];
+let source: 'rss' | 'manual' = 'manual';
+
+// If a channel ID is set, pull latest uploads from the public RSS feed at build time.
+if (YOUTUBE_CHANNEL_ID) {
+  try {
+    const res = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${YOUTUBE_CHANNEL_ID}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; jacksessions-site-build)' },
+    });
+    if (res.ok) {
+      const xml = await res.text();
+      const entries = xml.split('<entry>').slice(1);
+      videos = entries.map((e) => {
+        const id = (e.match(/<yt:videoId>(.*?)<\/yt:videoId>/) || [])[1] ?? '';
+        const rawTitle = (e.match(/<title>([\s\S]*?)<\/title>/) || [])[1] ?? '';
+        const title = rawTitle.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+        return { id, title };
+      }).filter((v) => v.id);
+      if (videos.length) source = 'rss';
+    }
+  } catch {
+    /* offline or feed unavailable — fall back to the manual list below */
+  }
+}
+
+if (!videos.length) videos = VIDEOS;
+---
+
+<Page title="Videos" description="Security walk-throughs, build-with-me sessions, and talks by Jack Sessions.">
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Videos</h2><span class="rule"></span>
+        <span class="count">{source === 'rss' ? 'latest uploads' : `${videos.length} picked`}</span>
+      </div>
+
+      {videos.length === 0 ? (
+        <p class="muted">
+          No videos yet. Set <code>YOUTUBE_CHANNEL_ID</code> in <code>src/consts.ts</code> to auto-list
+          your uploads, or add a few by hand in <code>src/data/videos.ts</code>.
+        </p>
+      ) : (
+        <div class="grid grid--3">
+          {videos.map((v) => (
+            <button class="vid" data-id={v.id} aria-label={`Play: ${v.title}`}>
+              <span class="vid__thumb">
+                <img
+                  src={`https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`}
+                  alt=""
+                  loading="lazy"
+                  width="480" height="360"
+                />
+                <span class="vid__play" aria-hidden="true"></span>
+              </span>
+              <span class="vid__title">{v.title}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+</Page>
+
+<script>
+  // Click-to-load: no YouTube iframe (or cookies) until the viewer asks for one.
+  document.querySelectorAll('.vid').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      const frame = document.createElement('iframe');
+      frame.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`;
+      frame.title = 'YouTube video player';
+      frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+      frame.allowFullscreen = true;
+      frame.loading = 'lazy';
+      const thumb = btn.querySelector('.vid__thumb');
+      thumb.replaceChildren(frame);
+      btn.classList.add('is-playing');
+    });
+  });
+</script>
+
+<style>
+  .vid { text-align: left; background: none; border: 0; padding: 0; cursor: pointer; color: inherit; font: inherit; display: flex; flex-direction: column; gap: 0.6rem; }
+  .vid__thumb { position: relative; aspect-ratio: 16 / 9; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+  .vid__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .2s ease, filter .2s ease; filter: saturate(.9) brightness(.9); }
+  .vid:hover .vid__thumb img { transform: scale(1.03); filter: none; }
+  .vid__thumb iframe { width: 100%; height: 100%; border: 0; }
+  .vid__play { position: absolute; inset: 0; margin: auto; width: 56px; height: 56px; border-radius: 50%;
+    background: color-mix(in oklab, var(--bg) 60%, transparent); border: 1px solid var(--accent); }
+  .vid__play::after { content: ""; position: absolute; left: 54%; top: 50%; transform: translate(-50%, -50%);
+    border-style: solid; border-width: 9px 0 9px 15px; border-color: transparent transparent transparent var(--accent); }
+  .vid:hover .vid__play { background: var(--accent); }
+  .vid:hover .vid__play::after { border-left-color: #05120b; }
+  .vid.is-playing .vid__play { display: none; }
+  .vid__title { font-family: var(--font-display); font-weight: 600; font-size: 0.98rem; line-height: 1.25; }
+</style>

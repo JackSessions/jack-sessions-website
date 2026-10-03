@@ -1,0 +1,141 @@
+---
+import Page from '../layouts/Page.astro';
+import Collab from '../components/Collab.astro';
+import Montage from '../components/Montage.astro';
+import { MUSIC } from '../data/music';
+
+const tracks = MUSIC.filter((r) => r.kind === 'file' && r.src);
+const embeds = MUSIC.filter((r) => r.kind !== 'file');
+---
+
+<Page title="Music" description="Tracks, demos, and live sets by Jack Sessions.">
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Music</h2><span class="rule"></span>
+        <span class="count">off the clock</span>
+      </div>
+
+      <p style="color:var(--muted); max-width:52ch; margin-bottom:1.75rem;">
+        The other half of the split. Tracks, demos, and the occasional live set.
+      </p>
+
+      {tracks.length > 0 && <Montage />}
+
+      {tracks.length > 0 && (
+        <div class="player" data-player data-tracks={JSON.stringify(tracks.map((t) => ({ title: t.title, jp: t.jp ?? '', src: t.src, note: t.note ?? '' })))}>
+          <div class="player__top">
+            <button class="player__btn" type="button" data-prev aria-label="Previous">⏮</button>
+            <button class="player__btn player__btn--main" type="button" data-play aria-label="Play">▶</button>
+            <button class="player__btn" type="button" data-next aria-label="Next">⏭</button>
+            <div class="player__meta">
+              <span class="player__label">Soundtrack</span>
+              <strong data-title></strong>
+              <input type="range" min="0" max="100" value="0" step="0.1" data-seek aria-label="Seek" />
+            </div>
+          </div>
+          <ol class="player__list">
+            {tracks.map((t, i) => (
+              <li><button type="button" data-track={i}><i aria-hidden="true">♪</i><span class="t"><b>{t.title}</b><small>{t.jp}</small></span><span class="mono n">{String(i + 1).padStart(2, '0')}</span></button></li>
+            ))}
+          </ol>
+          <audio preload="none" data-audio></audio>
+        </div>
+      )}
+
+      {MUSIC.length === 0 && (
+        <p class="muted empty">
+          Tracks are on the way. Add them in <code>src/data/music.ts</code>. Your own mp3s go in
+          <code>public/music/</code>, or link Spotify, SoundCloud, Bandcamp or YouTube.
+        </p>
+      )}
+
+      {embeds.length > 0 && (
+        <div class="music-grid">
+          {embeds.map((r) => (
+            <figure class="release">
+              {r.kind === 'spotify' && (
+                <iframe src={r.embed} width="100%" height="152" frameborder="0" loading="lazy"
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" title={r.title}></iframe>
+              )}
+              {r.kind === 'soundcloud' && (
+                <iframe width="100%" height="166" frameborder="0" loading="lazy" scrolling="no"
+                  allow="autoplay" src={r.embed} title={r.title}></iframe>
+              )}
+              {r.kind === 'bandcamp' && (
+                <iframe style="border:0;width:100%;height:120px;" src={r.embed} loading="lazy" seamless title={r.title}></iframe>
+              )}
+              {r.kind === 'youtube' && (
+                <div class="release__yt">
+                  <iframe src={`https://www.youtube-nocookie.com/embed/${r.embed}?rel=0`} loading="lazy"
+                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen title={r.title}></iframe>
+                </div>
+              )}
+              {r.note && <figcaption>{r.note}</figcaption>}
+            </figure>
+          ))}
+        </div>
+      )}
+
+      <Collab />
+    </div>
+  </section>
+</Page>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-player]');
+  if (root) {
+    const tracks = JSON.parse(root.dataset.tracks || '[]');
+    const audio = root.querySelector<HTMLAudioElement>('[data-audio]')!;
+    const play = root.querySelector<HTMLButtonElement>('[data-play]')!;
+    const title = root.querySelector<HTMLElement>('[data-title]')!;
+    const seek = root.querySelector<HTMLInputElement>('[data-seek]')!;
+    const items = root.querySelectorAll<HTMLButtonElement>('[data-track]');
+    let i = 0;
+    const load = (n: number, go = false) => {
+      i = (n + tracks.length) % tracks.length;
+      audio.src = tracks[i].src; title.textContent = tracks[i].title; window.dispatchEvent(new CustomEvent('music:track', { detail: tracks[i] }));
+      items.forEach((b, k) => b.classList.toggle('on', k === i));
+      if (go) audio.play();
+    };
+    load(0);
+    play.onclick = () => (audio.paused ? audio.play() : audio.pause());
+    root.querySelector<HTMLElement>('[data-next]')!.onclick = () => load(i + 1, true);
+    root.querySelector<HTMLElement>('[data-prev]')!.onclick = () => load(i - 1, true);
+    items.forEach((b, k) => (b.onclick = () => load(k, true)));
+    audio.onplay = () => { play.textContent = '⏸'; window.dispatchEvent(new Event('music:play')); };
+    audio.onpause = () => { play.textContent = '▶'; window.dispatchEvent(new Event('music:pause')); };
+    audio.onended = () => load(i + 1, true);
+    audio.ontimeupdate = () => { if (audio.duration) seek.value = String((audio.currentTime / audio.duration) * 100); };
+    seek.oninput = () => { if (audio.duration) audio.currentTime = (Number(seek.value) / 100) * audio.duration; };
+  }
+</script>
+
+<style>
+  .player { background: linear-gradient(160deg, #101a3a, #0b0f1e 60%, #1a1038); border: 1px solid #2c3a66; border-radius: 16px; padding: 1rem; margin-bottom: 1.5rem; position: relative; overflow: hidden; }
+  .player::before { content: ""; position: absolute; inset: -40% -10% auto; height: 120%; background: radial-gradient(ellipse at 30% 0, rgba(80, 130, 255, .25), transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(224, 74, 255, .15), transparent 55%); pointer-events: none; }
+  .player__top { position: relative; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+  .player__btn { width: 2.4rem; height: 2.4rem; border-radius: 50%; border: 1px solid #3a4a7a; background: rgba(255, 255, 255, .05); color: var(--text); cursor: pointer; }
+  .player__btn:hover { border-color: var(--accent); color: var(--accent); }
+  .player__btn--main { width: 3.1rem; height: 3.1rem; border-color: var(--accent); color: var(--accent); box-shadow: 0 0 14px color-mix(in oklab, var(--accent) 40%, transparent); }
+  .player__meta { flex: 1 1 14rem; display: grid; gap: 0.2rem; }
+  .player__label { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: .2em; text-transform: uppercase; color: #8fb8ff; }
+  .player__meta input { width: 100%; accent-color: var(--accent); }
+  .player__list { position: relative; list-style: none; margin: 0.9rem 0 0; padding: 0; display: grid; gap: 0.2rem; }
+  .player__list button { width: 100%; display: grid; grid-template-columns: 2rem 1fr auto; align-items: center; gap: 0.6rem; text-align: left; background: none; border: 0; color: #9fb0d8; padding: 0.45rem 0.6rem; border-radius: 10px; cursor: pointer; font: inherit; }
+  .player__list i { font-style: normal; display: grid; place-items: center; width: 1.7rem; height: 1.7rem; border-radius: 8px; background: linear-gradient(135deg, #2a3f8f, #6b3bff); color: #fff; font-size: 0.85rem; }
+  .player__list .t { display: grid; } .player__list .t b { font-weight: 600; } .player__list .t small { font-family: "Noto Sans JP", system-ui, sans-serif; color: #6f83b8; letter-spacing: .1em; } .player__list .n { color: #52638f; font-size: 0.75rem; }
+  .player__list button:hover, .player__list button.on { color: #fff; background: rgba(110, 150, 255, .14); box-shadow: inset 0 0 0 1px rgba(143, 184, 255, .35); }
+  .empty { margin-bottom: 1rem; }
+</style>
+
+<style>
+  .music-grid { display: grid; gap: 1.25rem; }
+  @media (min-width: 52rem) { .music-grid { grid-template-columns: 1fr 1fr; } }
+  .release { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.5rem; overflow: hidden; }
+  .release iframe { border-radius: 6px; display: block; }
+  .release__yt { position: relative; aspect-ratio: 16 / 9; }
+  .release__yt iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .release figcaption { color: var(--muted); font-size: 0.85rem; padding: 0.5rem 0.4rem 0.2rem; }
+</style>

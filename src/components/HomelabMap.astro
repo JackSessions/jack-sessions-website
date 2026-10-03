@@ -1,0 +1,559 @@
+---
+import { MAPS, HARDWARE, R620 } from '../data/homelab';
+---
+
+<section class="entry">
+  <button class="enter" type="button" data-enter>
+    <span class="enter__ring" aria-hidden="true"></span>
+    <span class="enter__label">Enter the lab</span>
+    <span class="enter__sub">Operation Homelab · 3D battle maps</span>
+  </button>
+  <a class="guide-link" href="/homelab/guide">Build your own: the step-by-step guide →</a>
+</section>
+
+<div class="lab" data-lab hidden role="dialog" aria-modal="true" aria-label="Homelab battle maps">
+  <div class="lab__stage" data-stage></div>
+  <div class="lab__fx" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i></div>
+
+  <header class="lab__hud">
+    <div class="hud__left"><strong>OPERATION HOMELAB</strong><span data-clock>T+00:00</span></div>
+    <nav class="hud__maps" data-maptabs aria-label="Maps"></nav>
+    <div class="hud__right">
+      <div class="seg" data-modes role="tablist" aria-label="Mode">
+        <button type="button" data-mode="explore" class="on">Explore</button><button type="button" data-mode="build">Build</button><button type="button" data-mode="play">Play</button>
+      </div>
+      <button type="button" class="hud__btn" data-info aria-pressed="true" title="Show or hide the info panel">ℹ Info</button>
+      <button type="button" class="hud__btn" data-air aria-pressed="true" title="Toggle the air battle">✈ Air</button>
+      <button type="button" class="hud__btn" data-close aria-label="Close">Esc ✕</button>
+    </div>
+  </header>
+
+  <div class="lab__readout" aria-hidden="true"><span data-hdg>HDG 000°</span><span data-grid>GRID 00 / 00</span></div>
+  <aside class="lab__panel" data-panel aria-live="polite"></aside>
+  <nav class="lab__chips" data-chips aria-label="Nodes"></nav>
+  <div class="lab__banner" data-banner aria-hidden="true"></div>
+
+  <div class="intro" data-intro hidden>
+    <div class="intro__bar top"></div><div class="intro__bar bottom"></div>
+    <pre class="intro__text" data-introtext></pre>
+    <div class="intro__stamp" data-stamp>ACCESS GRANTED</div>
+    <button type="button" class="intro__skip" data-skip>Skip ▸▸</button>
+  </div>
+  <p class="lab__fail" data-fail hidden>3D isn't available in this browser. Close this and read the lab summary on the page.</p>
+</div>
+
+<section class="static" aria-label="Lab hardware and maps">
+  <h3>The hardware</h3>
+  <div class="grid grid--3">
+    {HARDWARE.map((h) => (
+      <div class="card"><span class="meta">{h.role}</span><h3>{h.name}</h3><p>{h.spec}</p><p>{h.note}</p></div>
+    ))}
+  </div>
+  <h3>The maps</h3>
+  <div class="grid grid--2">
+    {MAPS.map((m) => (
+      <div class="card">
+        <span class="meta">MAP {m.num} · {m.tag}</span>
+        <h3>{m.name}</h3>
+        <p>{m.brief}</p>
+        <div class="tags"><span class="tag">{m.nodes.length} nodes</span><span class="tag">~{m.budget.ramGB} GB of {R620.ramGB} GB RAM</span></div>
+      </div>
+    ))}
+  </div>
+</section>
+
+<script>
+  import { MAPS, PALETTE, ZONES, R620 } from '../data/homelab';
+  import type { LabMap, LabNode, LabLink } from '../data/homelab';
+  import { lint, simulate, TEMPLATES } from '../lib/homelab/rules';
+  import type { Board, BNode, Zone } from '../lib/homelab/rules';
+  import { makeVisual, plate } from '../lib/homelab/visuals';
+  import { createAir } from '../lib/homelab/jets';
+  import type * as T from 'three';
+
+  const $ = <E extends HTMLElement>(s: string) => document.querySelector<E>(s)!;
+  const lab = $('[data-lab]'), enter = $<HTMLButtonElement>('[data-enter]'), stage = $('[data-stage]'), panel = $('[data-panel]'), chips = $('[data-chips]');
+  const fail = $('[data-fail]'), tabs = $('[data-maptabs]'), modesEl = $('[data-modes]'), banner = $('[data-banner]'), clockEl = $('[data-clock]');
+  const hdgEl = $('[data-hdg]'), gridEl = $('[data-grid]'), intro = $('[data-intro]'), introText = $('[data-introtext]'), airBtn = $<HTMLButtonElement>('[data-air]'), infoBtn = $<HTMLButtonElement>('[data-info]');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const noIntro = reduce || location.hash.includes('static');
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+
+  type Mode = 'explore' | 'build' | 'play';
+  let mode: Mode = 'explore', mapId = 'net', selectId: string | null = null, started = false, introDone = false;
+  let tool: 'move' | 'link' | 'delete' = 'move', armed: string | null = null, linkFrom: string | null = null;
+  type PNode = BNode & { pos: [number, number] };
+  let board: { nodes: PNode[]; links: { a: string; b: string }[]; n: number } = { nodes: [], links: [], n: 0 };
+  try { const raw = localStorage.getItem('lab-board'); if (raw) board = JSON.parse(raw); } catch {}
+  const saveBoard = () => { try { localStorage.setItem('lab-board', JSON.stringify(board)); } catch {} };
+  const curMap = () => MAPS.find((m) => m.id === mapId)!;
+
+  let api: {
+    setMode: (m: Mode) => void; loadMap: (id: string) => void; select: (id: string | null) => void; start: (withIntro: boolean) => void; stop: () => void;
+    rebuildBoard: () => void; place: (kind: string, x: number, z: number) => void; attack: (onEvent: (msg: string, cls: string) => void, done: () => void) => void; resetPlay: () => void; setAir: (v: boolean) => void; skipIntro: () => void;
+  } | null = null;
+
+  // ------------------------------------------------------------------ panel
+  const bar = (label: string, v: number, max: number, unit: string) => `<div class="meter"><span>${label}</span><div><i style="width:${Math.min(100, (v / max) * 100).toFixed(0)}%"></i></div><b>${v}${unit} / ${max}${unit}</b></div>`;
+  function mapHeader(m: LabMap) {
+    return `<span class="badge" style="--c:#ffb02e">MAP ${m.num}</span><h3>${esc(m.name)}</h3><p>${esc(m.brief)}</p>
+      <div class="meters"><small>Planned R620 budget</small>${bar('RAM', m.budget.ramGB, R620.ramGB, ' GB')}${bar('Cores', m.budget.cores, R620.cores, '')}${bar('Disk', m.budget.diskTB, R620.diskTB, ' TB')}</div>`;
+  }
+  function renderExplore() {
+    const m = curMap(); const n = selectId ? m.nodes.find((x) => x.id === selectId) : null;
+    let html = mapHeader(m);
+    if (n) {
+      const conns = m.links.filter((l) => l.label !== '' && (l.from === n.id || l.to === n.id)).map((l) => ({ other: m.nodes.find((x) => x.id === (l.from === n.id ? l.to : l.from))!, l }));
+      html += `<hr><span class="badge" style="--c:${n.color}">${esc(n.zone)}</span><h3>${esc(n.name)}</h3><p>${esc(n.summary)}</p>
+        <h4>Why it exists</h4><p>${esc(n.why)}</p><h4>Runs</h4><ul>${n.services.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>`;
+      if (n.lesson) html += `<div class="rule"><b>Rule of engagement</b>${esc(n.lesson)}</div>`;
+      if (n.goto) html += `<button class="go" type="button" data-open="${n.goto}">Open map ▸</button>`;
+      if (conns.length) html += `<h4>Connected to</h4><div class="conns">${conns.slice(0, 8).map((c) => `<button type="button" data-goto="${c.other.id}" class="${c.l.style}">${esc(c.other.name)} <small>${esc(c.l.label)}</small></button>`).join('')}</div>`;
+    } else html += `<hr><h4>Pick a node</h4><p>Click any node to see what it does and why it's there. Drag to rotate, scroll to zoom.</p>`;
+    html += `<h4>Rules of engagement</h4><ul class="rules">${m.rules.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
+      <h4>Learn more</h4><ul class="learn">${m.learn.map((l) => `<li><a href="${l.url}" target="_blank" rel="noopener">${esc(l.title)} ↗</a></li>`).join('')}</ul>
+      <a class="go alt" href="/homelab/guide">Build it yourself: the guide →</a>`;
+    setPanel(html);
+    panel.querySelectorAll<HTMLElement>('[data-goto]').forEach((b) => (b.onclick = () => choose(b.dataset.goto!)));
+    panel.querySelectorAll<HTMLElement>('[data-open]').forEach((b) => (b.onclick = () => switchMap(b.dataset.open!)));
+  }
+  function setPanel(html: string) { panel.innerHTML = `<button class="px" type="button" data-xpanel aria-label="Close panel">✕</button>` + html; }
+  panel.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('[data-xpanel]')) togglePanel(false); });
+  function togglePanel(open?: boolean) { const on = open ?? lab.classList.contains('nopanel'); lab.classList.toggle('nopanel', !on); infoBtn.setAttribute('aria-pressed', String(on)); }
+  const gradeColor = (g: string) => ({ S: '#4af0a2', A: '#4af0a2', B: '#ffe14a', C: '#ffb02e', D: '#ff7a2e', F: '#ff4d5e' } as Record<string, string>)[g] ?? '#7fa7b5';
+  function renderBuild() {
+    const L = lint(board);
+    const sel = board.nodes.find((n) => n.id === selectId);
+    setPanel(`
+      <span class="badge" style="--c:#ffb02e">BUILD MODE</span><h3>Design your own lab</h3>
+      <p>Drag parts onto the zones. Link them. The rules below grade your design live. Then switch to <b>Play</b> and attack it.</p>
+      <div class="tools">
+        ${(['move', 'link', 'delete'] as const).map((t) => `<button type="button" data-tool="${t}" class="${tool === t ? 'on' : ''}">${t === 'move' ? '✥ Move' : t === 'link' ? '⛓ Link' : '✕ Delete'}</button>`).join('')}
+        <select data-template aria-label="Load a template"><option value="">Template…</option>${Object.entries(TEMPLATES).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join('')}</select>
+        <button type="button" data-clear>Clear</button>
+      </div>
+      <h4>Parts <small>(drag onto the board, or click then click the board)</small></h4>
+      <div class="palette">${PALETTE.map((p) => `<button type="button" draggable="true" data-kind="${p.kind}" class="${armed === p.kind ? 'on' : ''}" title="${esc(p.hint)}" style="--c:${p.color}"><i></i>${esc(p.label)}</button>`).join('')}</div>
+      <div class="score"><div class="grade" style="--c:${gradeColor(L.grade)}">${L.grade}</div><div><b>${board.nodes.length ? L.score : 0}/100</b><small>${L.bad} critical · ${L.warn} warnings · ${L.tip} tips</small></div></div>
+      <ul class="check">${L.checklist.map((c) => `<li class="${c.ok ? 'ok' : ''}">${c.ok ? '✓' : '○'} ${esc(c.rule)}</li>`).join('')}</ul>
+      ${sel ? `<hr><h4>Selected</h4><p><b>${esc(sel.name)}</b> in ${sel.zone.toUpperCase()}</p>` : ''}
+      <h4>Suggestions</h4>
+      ${board.nodes.length === 0 ? '<p class="muted">Start by dropping an <b>Internet</b> and a <b>Firewall</b> on the board.</p>' : ''}
+      <div class="issues">${L.issues.map((i) => `<div class="issue ${i.sev}" data-ids="${i.ids.join(',')}"><b>${i.sev === 'bad' ? 'CRITICAL' : i.sev === 'warn' ? 'WARNING' : 'TIP'}</b> ${esc(i.msg)}${i.add ? ` <button type="button" data-arm="${i.add}">+ add</button>` : ''}</div>`).join('')}</div>
+      ${L.issues.some((i) => i.add) ? '<button class="go" type="button" data-suggest>Suggest my next move</button>' : ''}`);
+    panel.querySelectorAll<HTMLElement>('[data-tool]').forEach((b) => (b.onclick = () => { tool = b.dataset.tool as typeof tool; linkFrom = null; renderBuild(); }));
+    panel.querySelectorAll<HTMLElement>('[data-kind]').forEach((b) => {
+      b.onclick = () => { armed = armed === b.dataset.kind ? null : b.dataset.kind!; renderBuild(); showBanner(armed ? 'Click the board to place' : ''); };
+      b.addEventListener('dragstart', (e) => { (e as DragEvent).dataTransfer?.setData('text/kind', b.dataset.kind!); });
+    });
+    panel.querySelectorAll<HTMLElement>('[data-arm]').forEach((b) => (b.onclick = () => { armed = b.dataset.arm!; renderBuild(); showBanner('Click the board to place'); }));
+    panel.querySelectorAll<HTMLElement>('.issue[data-ids]').forEach((d) => (d.onclick = (e) => { if ((e.target as HTMLElement).tagName === 'BUTTON') return; const id = d.dataset.ids!.split(',')[0]; if (id) { selectId = id; api?.select(id); renderBuild(); } }));
+    const sug = panel.querySelector<HTMLElement>('[data-suggest]'); if (sug) sug.onclick = () => { const i = L.issues.find((x) => x.add); if (i) { armed = i.add!; renderBuild(); showBanner(i.msg); } };
+    const tpl = panel.querySelector<HTMLSelectElement>('[data-template]')!; tpl.onchange = () => { if (tpl.value) loadTemplate(tpl.value); };
+    panel.querySelector<HTMLElement>('[data-clear]')!.onclick = () => { board = { nodes: [], links: [], n: 0 }; commit(); };
+  }
+  function loadTemplate(k: string) {
+    const t = TEMPLATES[k]; board = { nodes: t.board.nodes.map((n) => ({ ...n, pos: t.pos[n.id] })), links: t.board.links.map((l) => ({ ...l })), n: 100 }; commit();
+  }
+  function commit() { saveBoard(); api?.rebuildBoard(); if (mode === 'build') renderBuild(); }
+  let banTimer = 0;
+  function showBanner(t: string) { banner.textContent = t; banner.classList.toggle('show', !!t); clearTimeout(banTimer); if (t) banTimer = window.setTimeout(() => banner.classList.remove('show'), 3200); }
+
+  function renderPlay(log: { msg: string; cls: string }[] = [], state: 'idle' | 'running' | 'done' = 'idle') {
+    const L = lint(board); const strikes = board.nodes.length ? simulate(board) : [];
+    const breaches = strikes.filter((s) => s.kind === 'breach' || s.kind === 'escape').length;
+    setPanel(`<span class="badge" style="--c:#ff4d5e">PLAY MODE</span><h3>Attack your design</h3>
+      <p>Hostile traffic hits your lab from the internet, then the malware zoo tries to break out. Segmentation decides who wins.</p>
+      <button class="go launch" type="button" data-launch ${state === 'running' || !board.nodes.length ? 'disabled' : ''}>${state === 'running' ? 'Engaging…' : state === 'done' ? '↻ Run it again' : '▶ Launch attack'}</button>
+      ${!board.nodes.length ? '<p class="muted">Your board is empty. Switch to <b>Build</b>, or load a template there.</p>' : ''}
+      <div class="log">${log.map((l) => `<div class="${l.cls}">${esc(l.msg)}</div>`).join('')}</div>
+      ${state === 'done' ? `<div class="result ${breaches ? 'lost' : 'won'}"><b>${breaches ? 'LINE BREACHED' : 'LINE HELD'}</b><span>${breaches ? `${breaches} node${breaches > 1 ? 's' : ''} compromised. Fix it in Build mode.` : 'Nothing got through. Your segmentation works.'}</span><span>Design grade ${L.grade} (${L.score}/100)</span></div>` : ''}`);
+    const b = panel.querySelector<HTMLButtonElement>('[data-launch]')!;
+    b.onclick = () => {
+      const entries: { msg: string; cls: string }[] = []; renderPlay(entries, 'running');
+      api?.attack((msg, cls) => { entries.push({ msg, cls }); renderPlay(entries, 'running'); const lg = panel.querySelector('.log'); if (lg) lg.scrollTop = lg.scrollHeight; }, () => renderPlay(entries, 'done'));
+    };
+  }
+  function renderChips() {
+    const items = mode === 'explore' ? curMap().nodes.filter((n) => n.kind !== 'lxc').map((n) => ({ id: n.id, name: n.name, color: n.color })) : board.nodes.map((n) => ({ id: n.id, name: n.name, color: '#38d6ff' }));
+    chips.innerHTML = items.map((n) => `<button type="button" data-chip="${n.id}" style="--c:${n.color}">${esc(n.name)}</button>`).join('');
+    chips.querySelectorAll<HTMLElement>('[data-chip]').forEach((b) => (b.onclick = () => choose(b.dataset.chip!)));
+  }
+  function renderPanel() { if (mode === 'explore') renderExplore(); else if (mode === 'build') renderBuild(); else renderPlay(); renderChips(); }
+  function choose(id: string | null) { selectId = id; if (id) togglePanel(true); if (mode === 'explore') renderExplore(); else if (mode === 'build') renderBuild(); chips.querySelectorAll<HTMLElement>('[data-chip]').forEach((b) => b.classList.toggle('on', b.dataset.chip === id)); api?.select(id); }
+  function renderTabs() {
+    tabs.innerHTML = MAPS.map((m) => `<button type="button" data-map="${m.id}" class="${m.id === mapId ? 'on' : ''}" title="${esc(m.tag)}"><b>${m.num}</b> ${esc(m.name)}</button>`).join('');
+    tabs.querySelectorAll<HTMLElement>('[data-map]').forEach((b) => (b.onclick = () => switchMap(b.dataset.map!)));
+  }
+  function switchMap(id: string) { if (mode !== 'explore') setMode('explore'); mapId = id; selectId = null; renderTabs(); api?.loadMap(id); renderPanel(); const m = curMap(); showBanner(`MAP ${m.num} // ${m.name.toUpperCase()}`); }
+  function setMode(m: Mode) {
+    mode = m; selectId = null; armed = null; linkFrom = null; modesEl.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.mode === m));
+    tabs.classList.toggle('dim', m !== 'explore'); api?.setMode(m); renderPanel();
+    showBanner(m === 'build' ? 'BUILD // drag parts onto the zones' : m === 'play' ? 'PLAY // launch the attack' : '');
+  }
+
+  // ------------------------------------------------------------------ 3D
+  async function build() {
+    const THREE = await import('three');
+    const { OrbitControls } = await import('three/examples/jsm/controls/OrbitControls.js');
+    const { CSS2DRenderer, CSS2DObject } = await import('three/examples/jsm/renderers/CSS2DRenderer.js');
+
+    const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x05080a, 0.0095);
+    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 400);
+    const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setClearColor(0x05080a); renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); stage.appendChild(renderer.domElement);
+    const labels = new CSS2DRenderer(); labels.domElement.className = 'lab__labels'; stage.appendChild(labels.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.47; controls.minDistance = 8; controls.maxDistance = 70; controls.autoRotate = !reduce; controls.autoRotateSpeed = 0.3;
+    renderer.domElement.addEventListener('pointerdown', () => (controls.autoRotate = false));
+    scene.add(new THREE.AmbientLight(0x6688aa, 0.8)); const sun = new THREE.DirectionalLight(0xffffff, 0.9); sun.position.set(10, 20, 8); scene.add(sun);
+    const grid = new THREE.GridHelper(160, 100, 0x1b4d5c, 0x0e2a33); grid.position.y = -0.02; scene.add(grid);
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(80, 64), new THREE.MeshBasicMaterial({ color: 0x060d11, transparent: true, opacity: 0.85 })); floor.rotation.x = -Math.PI / 2; floor.position.y = -0.05; scene.add(floor);
+    const air = createAir(THREE); scene.add(air.group);
+    const world = new THREE.Group(); scene.add(world);
+
+    type G = { g: T.Group; body: T.Group; tag: InstanceType<typeof CSS2DObject>; id: string };
+    let groups: Record<string, G> = {}; let pickables: T.Object3D[] = [];
+    let flows: { curve: T.Curve<T.Vector3>; dots: T.Mesh[]; speed: number; stopAt: number }[] = []; let xmarks: T.Object3D[] = [];
+    let linkObjs: T.Object3D[] = []; let center = new THREE.Vector3(0, 0, 0); let appear = 0; let glide = false; const goal = new THREE.Vector3();
+    const label = (text: string, cls = '') => { const d = document.createElement('div'); d.className = 'lab-label ' + cls; d.textContent = text; return new CSS2DObject(d); };
+    const COL: Record<string, string> = { public: '#b36bff', admin: '#4af0a2', normal: '#38d6ff', isolated: '#ff4d5e', light: '#2d7f94' };
+
+    function clear() {
+      while (world.children.length) {
+        const c = world.children[0]; world.remove(c);
+        c.traverse((o) => { const m = o as T.Mesh; m.geometry?.dispose?.(); const el = (o as unknown as { element?: HTMLElement; isCSS2DObject?: boolean }); if (el.isCSS2DObject) el.element?.remove(); });
+      }
+      hoverId = null;
+      groups = {}; pickables = []; flows = []; xmarks = []; linkObjs = [];
+    }
+    function nodeGroup(n: { id: string; name: string; kind: string; zone: string; color: string; pos: [number, number]; size: [number, number]; members?: string[] }, scale = 1, showZone = true) {
+      const g = new THREE.Group(); g.position.set(n.pos[0], 0, n.pos[1]); world.add(g);
+      const [pm, pe] = plate(THREE, n.size[0], n.size[1], n.color); g.add(pm, pe);
+      const body = makeVisual(THREE, n.kind, n.color, n.members); body.userData.body = true; body.scale.setScalar(scale); g.add(body);
+      const tiny = n.kind === 'lxc'; const tag = label(n.name, (n.kind === 'lxc' ? 'tiny ' : '') + (n.color === '#ff4d5e' && n.kind !== 'lxc' ? 'danger' : ''));
+      tag.position.set(0, n.kind === 'server' ? 4.3 : tiny ? 2.0 : n.kind === 'portal' ? 3.6 : 3.3, 0); g.add(tag);
+      if (showZone && !tiny) { const zl = label(n.zone, 'zone'); zl.position.set(0, 0.25, n.size[1] / 2 + 0.5); g.add(zl); }
+      g.traverse((o) => { o.userData.id = n.id; if ((o as T.Mesh).isMesh) pickables.push(o); });
+      groups[n.id] = { g, body, tag, id: n.id };
+    }
+    function linkLine(a: T.Vector3, b: T.Vector3, style: string, ends?: [string, string]) {
+      const dist = a.distanceTo(b); const light = style === 'light';
+      const mid = a.clone().lerp(b, 0.5).setY((light ? 1.4 : 3.2) + dist * (light ? 0.04 : 0.06));
+      const curve = new THREE.QuadraticBezierCurve3(a.clone().setY(0.9), mid, b.clone().setY(0.9));
+      const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(48)), style === 'isolated'
+        ? new THREE.LineDashedMaterial({ color: COL.isolated, dashSize: 0.35, gapSize: 0.3 }) : new THREE.LineBasicMaterial({ color: COL[style] ?? COL.normal, transparent: true, opacity: light ? 0.55 : 0.85 }));
+      if (style === 'isolated') line.computeLineDistances();
+      world.add(line); linkObjs.push(line);
+      const stopAt = style === 'isolated' ? 0.55 : 1;
+      if (style === 'isolated') {
+        const x = new THREE.Group(); [Math.PI / 4, -Math.PI / 4].forEach((r) => { const bar = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.12, 0.12), new THREE.MeshBasicMaterial({ color: COL.isolated })); bar.rotation.z = r; x.add(bar); });
+        x.position.copy(curve.getPoint(stopAt)); world.add(x); xmarks.push(x); linkObjs.push(x);
+      }
+      const dots: T.Mesh[] = []; const count = light ? 1 : 5;
+      for (let i = 0; i < count; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(light ? 0.07 : 0.11, 8, 8), new THREE.MeshBasicMaterial({ color: COL[style] ?? COL.normal })); m.userData.t = i / count; world.add(m); dots.push(m); linkObjs.push(m); }
+      flows.push({ curve, dots, speed: style === 'isolated' ? 0.12 : light ? 0.1 : 0.2, stopAt });
+      void ends;
+    }
+
+    // ---- explore content
+    function buildExplore(m: LabMap) {
+      clear();
+      m.nodes.forEach((n) => nodeGroup(n));
+      m.links.forEach((l) => linkLine(groups[l.from].g.position, groups[l.to].g.position, l.style));
+      frame_(m.nodes.map((n) => n.pos), new THREE.Vector3(m.center[0], 0, m.center[1]));
+    }
+    // ---- board content (build + play)
+    const ZONE_Z = 10;
+    function buildBoard() {
+      clear();
+      for (const z of ZONES) {
+        const [pm, pe] = plate(THREE, z.w, ZONE_Z * 2, z.color); pm.position.set(z.x + z.w / 2, 0.02, 0); pe.position.set(z.x + z.w / 2, 0.02, 0); pm.scale.y = 0.4; (pm.material as T.MeshStandardMaterial).opacity = 0.35; world.add(pm, pe);
+        const l = label(z.label.toUpperCase(), 'zone big'); l.position.set(z.x + z.w / 2, 0.3, -ZONE_Z - 0.6); world.add(l);
+      }
+      board.nodes.forEach((n) => nodeGroup({ id: n.id, name: n.name, kind: n.kind, zone: n.zone, color: PALETTE.find((p) => p.kind === n.kind)?.color ?? '#38d6ff', pos: n.pos, size: [2.4, 2.4] }, 0.85, false));
+      board.links.forEach((l) => { const a = groups[l.a], b = groups[l.b]; if (a && b) linkLine(a.g.position, b.g.position, 'normal'); });
+      markIssues();
+      frame_([[-22, -10], [25, 10]], new THREE.Vector3(1.5, 0, 0), 1.75);
+    }
+    function markIssues() {
+      if (mode !== 'build') return; const L = lint(board); const bad = new Set(L.issues.filter((i) => i.sev !== 'tip').flatMap((i) => i.ids));
+      for (const id in groups) groups[id].tag.element.classList.toggle('flag', bad.has(id));
+    }
+    function frame_(pts: [number, number][], c: T.Vector3, k = 1.6) {
+      center.copy(c); let r = 8; pts.forEach((p) => { r = Math.max(r, Math.hypot(p[0] - c.x, p[1] - c.z)); });
+      const dist = Math.min(66, Math.max(28, (r + 5) * k * 1.12)); const dir = new THREE.Vector3(0.2, 0.65, 0.73).normalize();
+      const shift = innerWidth > 800 ? dist * 0.2 : 0; goal.set(c.x + shift, 0, c.z); controls.target.copy(goal);
+      finalCam.copy(goal).addScaledVector(dir, dist); if (introDone || noIntro) { camera.position.copy(finalCam); } glide = false;
+    }
+    const finalCam = new THREE.Vector3(); let camFrom = new THREE.Vector3();
+
+    // ---- hover / click / drag
+    const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3();
+    let hoverId: string | null = null, downAt = [0, 0], dragId: string | null = null, dragged = false;
+    const setMouse = (e: { clientX: number; clientY: number }) => { const r = renderer.domElement.getBoundingClientRect(); mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(mouse, camera); };
+    const pickNode = (e: { clientX: number; clientY: number }) => { setMouse(e); const h = ray.intersectObjects(pickables, false)[0]; return h ? (h.object.userData.id as string) : null; };
+    const floorPoint = (e: { clientX: number; clientY: number }): [number, number] | null => { setMouse(e); return ray.ray.intersectPlane(plane, hit) ? [hit.x, hit.z] : null; };
+    const snap = (v: number) => Math.round(v * 2) / 2;
+    const zoneAt = (x: number): Zone => { let best = ZONES[0], d = 1e9; for (const z of ZONES) { const dd = x >= z.x && x <= z.x + z.w ? 0 : Math.min(Math.abs(x - z.x), Math.abs(x - z.x - z.w)); if (dd < d) { d = dd; best = z; } } return best.id as Zone; };
+    const clampBoard = (p: [number, number]): [number, number] => [Math.max(-22, Math.min(24, snap(p[0]))), Math.max(-9, Math.min(9, snap(p[1])))];
+
+    renderer.domElement.addEventListener('pointermove', (e) => {
+      hoverId = pickNode(e); renderer.domElement.style.cursor = hoverId ? (mode === 'build' && tool === 'move' ? 'grab' : 'pointer') : armed ? 'copy' : 'grab';
+      const fp = floorPoint(e); if (fp) gridEl.textContent = `GRID ${String(Math.round(fp[0] + 50)).padStart(2, '0')} / ${String(Math.round(fp[1] + 50)).padStart(2, '0')}`;
+      if (dragId && mode === 'build') { if (fp) { const p = clampBoard(fp); const n = board.nodes.find((x) => x.id === dragId)!; if (p[0] !== n.pos[0] || p[1] !== n.pos[1]) { n.pos = p; dragged = true; groups[dragId].g.position.set(p[0], 0, p[1]); } } }
+    });
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      downAt = [e.clientX, e.clientY]; dragged = false;
+      if (mode === 'build' && tool === 'move') { const id = pickNode(e); if (id) { dragId = id; controls.enabled = false; selectId = id; } }
+    });
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      const click = Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) < 5;
+      if (dragId) {
+        const n = board.nodes.find((x) => x.id === dragId)!; controls.enabled = true;
+        if (dragged) { n.zone = zoneAt(n.pos[0]); dragId = null; commit(); return; }
+        dragId = null;
+      }
+      if (!click) return;
+      const id = pickNode(e);
+      if (mode === 'explore') { choose(id); if (id) { const n = curMap().nodes.find((x) => x.id === id); if (n?.goto) switchMap(n.goto); } return; }
+      if (mode !== 'build') return;
+      if (armed && !id) { const fp = floorPoint(e); if (fp) place(armed, fp[0], fp[1]); return; }
+      if (id && tool === 'delete') { board.nodes = board.nodes.filter((n) => n.id !== id); board.links = board.links.filter((l) => l.a !== id && l.b !== id); selectId = null; commit(); return; }
+      if (id && tool === 'link') {
+        if (!linkFrom) { linkFrom = id; showBanner('Now click the node to link to'); }
+        else if (linkFrom !== id) { const ex = board.links.findIndex((l) => (l.a === linkFrom && l.b === id) || (l.a === id && l.b === linkFrom)); if (ex >= 0) board.links.splice(ex, 1); else board.links.push({ a: linkFrom, b: id }); linkFrom = null; commit(); }
+        return;
+      }
+      choose(id);
+    });
+    stage.addEventListener('dragover', (e) => { if (mode === 'build') e.preventDefault(); });
+    stage.addEventListener('drop', (e) => { if (mode !== 'build') return; e.preventDefault(); const kind = e.dataTransfer?.getData('text/kind'); const fp = floorPoint(e); if (kind && fp) place(kind, fp[0], fp[1]); });
+    addEventListener('keydown', (e) => { if (!lab.hidden && mode === 'build' && (e.key === 'Delete' || e.key === 'Backspace') && selectId && !(e.target as HTMLElement).matches('input,select')) { board.nodes = board.nodes.filter((n) => n.id !== selectId); board.links = board.links.filter((l) => l.a !== selectId && l.b !== selectId); selectId = null; commit(); } });
+
+    function place(kind: string, x: number, z: number) {
+      const p = clampBoard([x, z]); const def = PALETTE.find((q) => q.kind === kind)!; board.n += 1;
+      const count = board.nodes.filter((n) => n.kind === kind).length + 1;
+      board.nodes.push({ id: 'b' + board.n, kind, zone: zoneAt(p[0]), name: count > 1 ? `${def.label} ${count}` : def.label, pos: p });
+      armed = null; showBanner(''); commit();
+    }
+
+    // ---- play animation
+    type Pkt = { m: T.Mesh; pts: T.Vector3[]; t: number; delay: number; speed: number; onEnd: () => void };
+    let pkts: Pkt[] = []; let booms: { m: T.Mesh; life: number }[] = [];
+    function strikeOnce(path: string[], color: number, delay: number, onEnd: () => void) {
+      const pts = path.map((id) => groups[id]?.g.position.clone().setY(1.2)).filter(Boolean) as T.Vector3[]; if (pts.length < 2) { setTimeout(onEnd, delay * 1000); return; }
+      const m = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 10), new THREE.MeshBasicMaterial({ color })); m.visible = false; world.add(m); pkts.push({ m, pts, t: 0, delay, speed: 5.5, onEnd: () => { world.remove(m); onEnd(); } });
+    }
+    function boom(id: string, color: number) { const g = groups[id]; if (!g) return; const m = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.9, 32), new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })); m.rotation.x = -Math.PI / 2; m.position.copy(g.g.position).setY(0.4); world.add(m); booms.push({ m, life: 0 }); }
+    const status: Record<string, string> = {};
+    function attack(onEvent: (msg: string, cls: string) => void, done: () => void) {
+      resetPlay(); const strikes = simulate(board); const byId = new Map(board.nodes.map((n) => [n.id, n])); let pending = strikes.length;
+      if (!strikes.length) { done(); return; }
+      onEvent('⚠ Hostile traffic detected on the WAN…', 'warn');
+      strikes.forEach((s, i) => {
+        const color = s.kind === 'blocked' ? 0xffb02e : s.kind === 'exposed' ? 0xb36bff : 0xff4d5e;
+        strikeOnce(s.path, color, 0.3 + i * 0.55, () => {
+          const name = byId.get(s.target)?.name ?? s.target;
+          if (s.kind === 'blocked') { boom(s.target, 0xffb02e); onEvent(`✓ BLOCKED at ${name}: ${s.note}`, 'ok'); }
+          else if (s.kind === 'exposed') { boom(s.target, 0xb36bff); onEvent(`• ${s.note}`, 'info'); }
+          else { boom(s.target, 0xff4d5e); status[s.target] = 'breach'; groups[s.target]?.tag.element.classList.add('breach'); onEvent(`✖ ${s.kind === 'escape' ? 'ESCAPE' : 'BREACH'}: ${s.note}`, 'bad'); }
+          if (--pending === 0) setTimeout(done, 400);
+        });
+      });
+    }
+    function resetPlay() { pkts.forEach((p) => world.remove(p.m)); pkts = []; booms.forEach((b) => world.remove(b.m)); booms = []; for (const k in groups) groups[k].tag.element.classList.remove('breach'); for (const k in status) delete status[k]; }
+
+    // ---- loop
+    function size() { const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return; renderer.setSize(w, h); labels.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+    const clock = new THREE.Clock(); let raf = 0, t0 = 0; const temp = new THREE.Vector3();
+    function frame() {
+      const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+      appear = Math.min(1, appear + dt / 1.1);
+      const ids = Object.keys(groups);
+      ids.forEach((id, i) => {
+        const { g, body } = groups[id]; const k = Math.max(0, Math.min(1, appear * 2.4 - Math.min(i, 14) * 0.12)); const e = 1 - Math.pow(1 - k, 3);
+        g.scale.setScalar(Math.max(0.001, e)); g.position.y = (1 - e) * -2;
+        const sel = selectId === id || linkFrom === id, hov = hoverId === id, br = status[id] === 'breach';
+        g.traverse((o) => {
+          const m = o as T.Mesh; if (m.userData.spin) m.rotation.y += m.userData.spin * dt;
+          const mt = m.material as T.MeshStandardMaterial | undefined;
+          if (m.isMesh && mt && mt.emissiveIntensity !== undefined) { const target = br ? 1.2 + 0.6 * Math.sin(t * 12) : sel ? 1.0 : hov ? 0.7 : 0.35; mt.emissiveIntensity += (target - mt.emissiveIntensity) * 0.15; }
+        });
+        body.position.y = Math.sin(t * 1.2 + i) * 0.05 + (sel ? 0.15 : 0);
+      });
+      flows.forEach((f) => f.dots.forEach((d) => { d.userData.t = (d.userData.t + dt * f.speed) % 1; d.position.copy(f.curve.getPoint(d.userData.t * f.stopAt)); d.visible = appear > 0.8; }));
+      xmarks.forEach((x) => x.scale.setScalar(1 + 0.15 * Math.sin(t * 5)));
+      for (let i = pkts.length - 1; i >= 0; i--) {
+        const p = pkts[i]; p.delay -= dt; if (p.delay > 0) continue; p.m.visible = true; p.t += dt * p.speed;
+        const seg = Math.min(p.pts.length - 1, Math.floor(p.t)); const u = p.t - seg;
+        if (p.t >= p.pts.length - 1) { pkts.splice(i, 1); p.onEnd(); continue; }
+        p.m.position.lerpVectors(p.pts[seg], p.pts[seg + 1], u); p.m.position.y += Math.sin(u * Math.PI) * 0.6;
+      }
+      for (let i = booms.length - 1; i >= 0; i--) { const b = booms[i]; b.life += dt; b.m.scale.setScalar(1 + b.life * 5); (b.m.material as T.MeshBasicMaterial).opacity = Math.max(0, 0.9 - b.life * 1.1); if (b.life > 0.9) { world.remove(b.m); booms.splice(i, 1); } }
+      air.update(t, dt, center.x, center.z, mode === 'play' && pkts.length > 0);
+      // intro camera descent
+      if (!introDone && t0 > 0) { const u = Math.min(1, Math.max(0, (t - t0) / 3.4)); const e = u * u * (3 - 2 * u); camera.position.lerpVectors(camFrom, finalCam, e); controls.enabled = false; if (u >= 1) { introDone = true; controls.enabled = true; } }
+      if (glide) { controls.target.lerp(goal, 0.07); if (controls.target.distanceTo(goal) < 0.02) glide = false; }
+      controls.update(); renderer.render(scene, camera); labels.render(scene, camera);
+      const az = (Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z) * 180) / Math.PI; hdgEl.textContent = 'HDG ' + String(Math.round((az + 360) % 360)).padStart(3, '0') + '°';
+      raf = requestAnimationFrame(frame);
+    }
+    size(); new ResizeObserver(size).observe(stage);
+    void temp;
+
+    return {
+      setMode(m: Mode) { resetPlay(); if (m === 'explore') buildExplore(curMap()); else buildBoard(); appear = 0.55; },
+      loadMap(id: string) { resetPlay(); buildExplore(MAPS.find((x) => x.id === id)!); appear = 0.3; camFrom.copy(camera.position); glide = true; camera.position.copy(finalCam); },
+      select(id: string | null) { if (!id || !groups[id]) { goal.set(center.x, 0, center.z); glide = true; return; } const p = groups[id].g.position; goal.set(p.x, 0, p.z); glide = true; controls.autoRotate = false; if (mode === 'build') markIssues(); },
+      start(withIntro: boolean) {
+        if (!world.children.length) buildExplore(curMap());
+        appear = withIntro ? 0 : 1; clock.getDelta(); size(); cancelAnimationFrame(raf);
+        if (!withIntro) { introDone = true; camera.position.copy(finalCam); }
+        else { introDone = false; t0 = 0; camFrom.copy(finalCam).sub(goal).multiplyScalar(2.6).add(goal).setY(finalCam.y * 2.4); camera.position.copy(camFrom); }
+        raf = requestAnimationFrame(frame);
+      },
+      stop() { cancelAnimationFrame(raf); },
+      rebuildBoard() { buildBoard(); appear = 1; },
+      place, attack, resetPlay, setAir(v: boolean) { air.setVisible(v); },
+      skipIntro() { if (!introDone && t0 === 0) { appear = 0; t0 = clock.elapsedTime + 0.0001; } },
+    };
+  }
+
+  // ------------------------------------------------------------------ intro
+  const INTRO = [
+    'OPERATION HOMELAB', '',
+    'THEATRE ........ [REDACTED]',
+    'ASSETS ......... 1x DELL POWEREDGE R620  //  32 CORES  //  250 GB RAM  //  10 TB',
+    '                 1x MINI PC  //  1x LENOVO LAPTOP (BATTLE-DAMAGED)',
+    'ASSIGNED ....... 20 LXC  //  5 MAPS  //  4 AIRCRAFT ON STATION',
+    'OBJECTIVE ...... BREAK THINGS SAFELY. DEFEND EVERYTHING ELSE.', '',
+    'RULES OF ENGAGEMENT:  NEVER PUT THE WAN ON THE LAN.',
+  ];
+  let introTimer = 0;
+  function playIntro(): Promise<void> {
+    return new Promise((resolve) => {
+      intro.hidden = false; intro.classList.remove('out'); requestAnimationFrame(() => intro.classList.add('on')); introText.textContent = '';
+      let li = 0, ci = 0, done = false;
+      const finish = () => { if (done) return; done = true; clearTimeout(introTimer); intro.classList.add('out'); api?.skipIntro(); setTimeout(() => { intro.hidden = true; intro.classList.remove('on'); }, 900); resolve(); };
+      $('[data-skip]').onclick = finish; intro.onclick = finish;
+      const type = () => {
+        if (done) return; const line = INTRO[li] ?? ''; ci++; const so = INTRO.slice(0, li).join('\n') + (li ? '\n' : '') + line.slice(0, ci); introText.textContent = so;
+        if (ci >= line.length) { li++; ci = 0; if (li >= INTRO.length) { document.querySelector('[data-stamp]')!.classList.add('on'); introTimer = window.setTimeout(finish, 1700); return; } introTimer = window.setTimeout(type, line ? 140 : 60); }
+        else introTimer = window.setTimeout(type, 16);
+      };
+      introTimer = window.setTimeout(type, 700);
+    });
+  }
+
+  // ------------------------------------------------------------------ open / close
+  const t0 = performance.now();
+  setInterval(() => { if (!lab.hidden) { const s = Math.floor((performance.now() - t0) / 1000); clockEl.textContent = `T+${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; } }, 1000);
+  function webgl() { try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch { return false; } }
+  async function open() {
+    const r = enter.getBoundingClientRect(); lab.style.setProperty('--ox', r.left + r.width / 2 + 'px'); lab.style.setProperty('--oy', r.top + r.height / 2 + 'px');
+    lab.hidden = false; lab.classList.remove('open'); void lab.offsetWidth; lab.classList.add('open'); document.documentElement.style.overflow = 'hidden';
+    renderTabs(); renderPanel();
+    if (!webgl()) { fail.hidden = false; return; }
+    try {
+      const firstTime = !started; if (!started) { started = true; api = await build(); }
+      const withIntro = firstTime && !noIntro; api!.start(withIntro); if (withIntro) await playIntro();
+    } catch (e) { console.error(e); fail.hidden = false; }
+  }
+  function close() { lab.classList.remove('open'); api?.stop(); clearTimeout(introTimer); intro.hidden = true; setTimeout(() => { lab.hidden = true; document.documentElement.style.overflow = ''; }, 450); enter.focus(); }
+  enter.addEventListener('click', open);
+  $('[data-close]').addEventListener('click', close);
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && !lab.hidden) close(); });
+  modesEl.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => (b.onclick = () => setMode(b.dataset.mode as Mode)));
+  infoBtn.onclick = () => togglePanel();
+  airBtn.onclick = () => { const on = airBtn.getAttribute('aria-pressed') !== 'true'; airBtn.setAttribute('aria-pressed', String(on)); api?.setAir(on); };
+  if (location.hash.startsWith('#map')) { const tk = location.hash.split('-'); open().then(() => { const mp = MAPS.find((x) => tk.includes(x.id)); if (mp) switchMap(mp.id); if (tk.includes('build') || tk.includes('play')) { setMode(tk.includes('play') ? 'play' : 'build'); for (const t of Object.keys(TEMPLATES)) if (tk.includes(t)) loadTemplate(t); if (tk.includes('play')) renderPlay(); if (tk.includes('run')) setTimeout(() => document.querySelector<HTMLElement>('[data-launch]')?.click(), 300); } }); }
+</script>
+
+<style>
+  .entry { display: grid; place-items: center; gap: 0.9rem; padding: 3rem 0 2rem; }
+  .enter { position: relative; display: grid; gap: 0.2rem; place-items: center; width: min(26rem, 92%); padding: 1.6rem 1rem; cursor: pointer;
+    background: color-mix(in oklab, var(--accent-2) 8%, var(--surface)); border: 1px solid var(--accent-2); border-radius: var(--radius); color: var(--text); overflow: hidden; }
+  .enter:hover { background: color-mix(in oklab, var(--accent-2) 16%, var(--surface)); }
+  .enter__ring { position: absolute; inset: -40%; border-radius: 50%; border: 1px solid var(--accent-2); opacity: 0; animation: ping 2.6s ease-out infinite; }
+  @keyframes ping { 0% { transform: scale(.3); opacity: .7; } 100% { transform: scale(1); opacity: 0; } }
+  .enter__label { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; color: var(--accent-2); }
+  .enter__sub { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .guide-link { font-family: var(--font-mono); font-size: 0.85rem; }
+  .static { margin-top: 2rem; } .static h3 { margin: 1.5rem 0 1rem; }
+
+  .lab { position: fixed; inset: 0; z-index: 100; background: #05080a; clip-path: circle(0 at var(--ox, 50%) var(--oy, 50%)); transition: clip-path .65s cubic-bezier(.7, 0, .2, 1); font-family: var(--font-mono); }
+  .lab[hidden] { display: none; }
+  .lab.open { clip-path: circle(160% at var(--ox, 50%) var(--oy, 50%)); }
+  .lab__stage { position: absolute; inset: 0; z-index: 0; }
+  .lab__stage :global(canvas) { display: block; touch-action: none; }
+  :global(.lab__labels) { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  :global(.lab-label) { font-family: var(--font-mono); font-size: 0.74rem; color: #e8f6ff; background: rgba(5, 12, 16, .78); border: 1px solid rgba(255, 176, 46, .5); padding: 0.1rem 0.45rem; border-radius: 3px; white-space: nowrap; transform: translateY(-4px); text-transform: uppercase; letter-spacing: .03em; }
+  :global(.lab-label.zone) { font-size: 0.62rem; color: #7fa7b5; border-color: transparent; background: transparent; letter-spacing: .1em; }
+  :global(.lab-label.zone.big) { font-size: 0.8rem; color: #cfe7f0; }
+  :global(.lab-label.tiny) { font-size: 0.58rem; padding: 0 0.25rem; }
+  :global(.lab-label.danger), :global(.lab-label.flag) { color: #ffd2d6; border-color: rgba(255, 77, 94, .85); }
+  :global(.lab-label.flag::after) { content: ' ⚠'; color: #ffb02e; }
+  :global(.lab-label.breach) { background: #ff4d5e; color: #fff; border-color: #fff; animation: blink .5s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .55; } }
+  .lab__fx { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, .65)), repeating-linear-gradient(0deg, rgba(255, 176, 46, .035) 0 1px, transparent 1px 3px); }
+  .c { position: absolute; width: 26px; height: 26px; border: 2px solid rgba(255, 176, 46, .75); }
+  .c.tl { top: 64px; left: 14px; border-right: 0; border-bottom: 0; } .c.tr { top: 64px; right: 14px; border-left: 0; border-bottom: 0; }
+  .c.bl { bottom: 62px; left: 14px; border-right: 0; border-top: 0; } .c.br { bottom: 62px; right: 14px; border-left: 0; border-top: 0; }
+  .lab__hud { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; padding: 0.6rem 1rem; font-size: 0.74rem; color: var(--accent-2); background: linear-gradient(#05080a 60%, transparent); z-index: 3; letter-spacing: .06em; }
+  .hud__left strong { letter-spacing: .14em; } .hud__left span { margin-left: 0.8rem; color: var(--muted); }
+  .hud__maps { display: flex; gap: 0.3rem; flex-wrap: wrap; } .hud__maps.dim { opacity: .45; }
+  .hud__maps :global(button), .seg button, .hud__btn { background: rgba(5, 12, 16, .85); color: var(--text); border: 1px solid var(--line); padding: 0.28rem 0.7rem; cursor: pointer; font: inherit; text-transform: uppercase; letter-spacing: .05em; }
+  .hud__maps :global(button) { border-radius: 3px; } .hud__maps :global(button b) { color: var(--accent-2); }
+  .hud__maps :global(button.on), .seg button.on, .hud__btn[aria-pressed="true"] { background: var(--accent-2); color: #1a1000; border-color: var(--accent-2); } .hud__maps :global(button.on b) { color: #1a1000; }
+  .hud__right { display: flex; gap: 0.4rem; align-items: center; } .seg { display: flex; } .seg button:first-child { border-radius: 3px 0 0 3px; } .seg button:last-child { border-radius: 0 3px 3px 0; } .hud__btn { border-radius: 3px; }
+  .lab__readout { position: absolute; left: 1.2rem; bottom: 4.9rem; display: grid; gap: 0.15rem; font-size: 0.66rem; color: var(--muted); letter-spacing: .1em; z-index: 2; }
+  .lab.nopanel .lab__panel { display: none; }
+  .lab__panel :global(.px) { position: absolute; top: 0.5rem; right: 0.5rem; width: 1.9rem; height: 1.9rem; border-radius: 50%; border: 1px solid var(--line); background: rgba(5, 12, 16, .9); color: var(--text); cursor: pointer; font: inherit; z-index: 1; }
+  .lab__panel :global(.px:hover) { border-color: var(--accent-2); color: var(--accent-2); }
+  .lab__panel { position: absolute; top: 3.6rem; right: 1rem; bottom: 4.4rem; width: min(25rem, calc(100% - 2rem)); overflow: auto; padding: 1rem 1.15rem; z-index: 3; background: rgba(8, 14, 12, .9); backdrop-filter: blur(6px); border: 1px solid rgba(255, 176, 46, .35); border-radius: 4px; font-family: var(--font-body, inherit); }
+  .lab__panel :global(h3) { margin: 0.4rem 0; } .lab__panel :global(hr) { border: 0; border-top: 1px solid var(--line); margin: 1rem 0; }
+  .lab__panel :global(h4) { margin: 1rem 0 0.3rem; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-2); } .lab__panel :global(h4 small) { color: var(--muted); text-transform: none; letter-spacing: 0; }
+  .lab__panel :global(p) { margin: 0 0 0.4rem; color: var(--text); font-size: 0.9rem; } .lab__panel :global(.muted) { color: var(--muted); }
+  .lab__panel :global(ul) { margin: 0; padding-left: 1.1rem; color: var(--muted); font-size: 0.88rem; } .lab__panel :global(.learn), .lab__panel :global(.check) { list-style: none; padding: 0; }
+  .lab__panel :global(.badge) { display: inline-block; font-family: var(--font-mono); font-size: 0.68rem; color: var(--c); border: 1px solid var(--c); border-radius: 999px; padding: 0.05rem 0.6rem; }
+  .lab__panel :global(.meters small) { font-family: var(--font-mono); font-size: 0.66rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  .lab__panel :global(.meter) { display: grid; grid-template-columns: 3rem 1fr auto; gap: 0.5rem; align-items: center; font-size: 0.72rem; font-family: var(--font-mono); margin-top: 0.25rem; color: var(--muted); }
+  .lab__panel :global(.meter div) { height: 6px; background: #14201c; border-radius: 3px; overflow: hidden; } .lab__panel :global(.meter i) { display: block; height: 100%; background: var(--accent-2); }
+  .lab__panel :global(.rule) { margin: 0.8rem 0; padding: 0.6rem 0.8rem; border-left: 3px solid var(--accent-2); background: rgba(255, 176, 46, .08); font-size: 0.88rem; } .lab__panel :global(.rule b) { display: block; font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 0.2rem; }
+  .lab__panel :global(.go) { display: inline-block; margin-top: 0.8rem; background: var(--accent-2); color: #1a1000; border: 0; border-radius: 3px; padding: 0.5rem 1rem; font-family: var(--font-mono); font-weight: 700; cursor: pointer; text-decoration: none; text-transform: uppercase; letter-spacing: .05em; }
+  .lab__panel :global(.go[disabled]) { opacity: .5; cursor: default; } .lab__panel :global(.go.alt) { background: transparent; color: var(--accent-2); border: 1px solid var(--accent-2); } .lab__panel :global(.launch) { width: 100%; font-size: 0.95rem; padding: 0.8rem; background: #ff4d5e; color: #fff; }
+  .lab__panel :global(.conns) { display: grid; gap: 0.3rem; } .lab__panel :global(.conns button) { text-align: left; background: transparent; color: var(--text); border: 1px solid var(--line); border-left: 3px solid #38d6ff; border-radius: 4px; padding: 0.3rem 0.6rem; cursor: pointer; font: inherit; font-size: 0.85rem; }
+  .lab__panel :global(.conns button.isolated) { border-left-color: #ff4d5e; } .lab__panel :global(.conns button.public) { border-left-color: #b36bff; } .lab__panel :global(.conns button.admin) { border-left-color: #4af0a2; } .lab__panel :global(.conns small) { display: block; color: var(--muted); }
+  .lab__panel :global(.tools), .lab__panel :global(.palette) { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0; }
+  .lab__panel :global(.tools button), .lab__panel :global(.tools select), .lab__panel :global(.palette button) { background: rgba(5, 12, 16, .9); color: var(--text); border: 1px solid var(--line); border-radius: 3px; padding: 0.3rem 0.6rem; font: inherit; font-size: 0.78rem; cursor: pointer; }
+  .lab__panel :global(.tools button.on), .lab__panel :global(.palette button.on) { border-color: var(--accent-2); color: var(--accent-2); }
+  .lab__panel :global(.palette button) { display: inline-flex; align-items: center; gap: 0.4rem; cursor: grab; } .lab__panel :global(.palette i) { width: 9px; height: 9px; border-radius: 2px; background: var(--c); }
+  .lab__panel :global(.score) { display: flex; align-items: center; gap: 0.9rem; margin: 0.8rem 0 0.4rem; } .lab__panel :global(.grade) { width: 3.4rem; height: 3.4rem; display: grid; place-items: center; font-family: var(--font-display); font-size: 2rem; font-weight: 800; color: var(--c); border: 2px solid var(--c); border-radius: 6px; }
+  .lab__panel :global(.score small) { display: block; color: var(--muted); font-size: 0.74rem; }
+  .lab__panel :global(.check li) { font-size: 0.82rem; color: var(--muted); } .lab__panel :global(.check li.ok) { color: #4af0a2; }
+  .lab__panel :global(.issues) { display: grid; gap: 0.4rem; } .lab__panel :global(.issue) { font-size: 0.83rem; padding: 0.45rem 0.6rem; border-left: 3px solid var(--line); background: rgba(255,255,255,.03); cursor: pointer; }
+  .lab__panel :global(.issue b) { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: .08em; margin-right: 0.3rem; }
+  .lab__panel :global(.issue.bad) { border-left-color: #ff4d5e; } .lab__panel :global(.issue.bad b) { color: #ff4d5e; } .lab__panel :global(.issue.warn) { border-left-color: #ffb02e; } .lab__panel :global(.issue.warn b) { color: #ffb02e; } .lab__panel :global(.issue.tip) { border-left-color: #38d6ff; } .lab__panel :global(.issue.tip b) { color: #38d6ff; }
+  .lab__panel :global(.issue button) { margin-left: 0.3rem; background: transparent; color: var(--accent-2); border: 1px solid var(--accent-2); border-radius: 3px; font: inherit; font-size: 0.72rem; cursor: pointer; }
+  .lab__panel :global(.log) { margin: 0.8rem 0; max-height: 14rem; overflow: auto; font-family: var(--font-mono); font-size: 0.75rem; display: grid; gap: 0.2rem; }
+  .lab__panel :global(.log .bad) { color: #ff4d5e; } .lab__panel :global(.log .ok) { color: #4af0a2; } .lab__panel :global(.log .warn) { color: #ffb02e; } .lab__panel :global(.log .info) { color: #b36bff; }
+  .lab__panel :global(.result) { display: grid; gap: 0.25rem; padding: 0.8rem; border: 2px solid; border-radius: 4px; font-size: 0.86rem; } .lab__panel :global(.result b) { font-family: var(--font-display); font-size: 1.3rem; }
+  .lab__panel :global(.result.won) { border-color: #4af0a2; color: #4af0a2; } .lab__panel :global(.result.lost) { border-color: #ff4d5e; color: #ff4d5e; }
+  .lab__chips { position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 0.45rem; padding: 0.7rem 1rem; overflow-x: auto; background: linear-gradient(transparent, #05080a 45%); z-index: 3; }
+  .lab__chips :global(button) { flex: 0 0 auto; background: rgba(8, 16, 20, .9); color: var(--text); border: 1px solid var(--c); border-radius: 3px; padding: 0.3rem 0.8rem; cursor: pointer; font: inherit; font-size: 0.75rem; text-transform: uppercase; }
+  .lab__chips :global(button.on), .lab__chips :global(button:hover) { background: var(--c); color: #04110c; }
+  .lab__banner { position: absolute; left: 50%; top: 5.2rem; transform: translate(-50%, -8px); z-index: 3; padding: 0.4rem 1.1rem; font-size: 0.85rem; letter-spacing: .14em; color: #1a1000; background: var(--accent-2); opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; text-transform: uppercase; }
+  .lab__banner.show { opacity: 1; transform: translate(-50%, 0); }
+  .lab__fail { position: absolute; inset: 0; display: grid; place-items: center; padding: 2rem; text-align: center; color: var(--muted); } .lab__fail[hidden] { display: none; }
+
+  .intro { position: absolute; inset: 0; z-index: 10; background: #000; display: grid; place-items: center; transition: opacity .9s ease; cursor: pointer; }
+  .intro[hidden] { display: none; } .intro.out { opacity: 0; pointer-events: none; }
+  .intro__bar { position: absolute; left: 0; right: 0; height: 0; background: #000; z-index: 2; transition: height .9s ease; } .intro__bar.top { top: 0; } .intro__bar.bottom { bottom: 0; }
+  .intro.on .intro__bar { height: 14vh; }
+  .intro__text { margin: 0; max-width: min(56rem, 92%); font-family: var(--font-mono); font-size: clamp(0.72rem, 1.5vw, 1.05rem); line-height: 1.85; color: #d9d2b8; text-shadow: 0 0 12px rgba(255, 176, 46, .35); white-space: pre-wrap; background: transparent; border: 0; }
+  .intro__text::after { content: '█'; margin-left: 2px; color: var(--accent-2); animation: blink 0.8s steps(2) infinite; }
+  .intro__stamp { position: absolute; right: 8%; bottom: 22vh; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.4rem, 4vw, 3rem); color: #4af0a2; border: 4px solid #4af0a2; padding: 0.2rem 1rem; transform: rotate(-8deg) scale(1.6); opacity: 0; letter-spacing: .1em; }
+  .intro__stamp.on { opacity: .9; transform: rotate(-8deg) scale(1); transition: opacity .15s, transform .25s cubic-bezier(.2, 1.6, .4, 1); }
+  .intro__skip { position: absolute; right: 1.2rem; bottom: 16vh; z-index: 3; background: transparent; color: var(--muted); border: 1px solid var(--line); padding: 0.3rem 0.8rem; font: inherit; font-family: var(--font-mono); cursor: pointer; }
+  @media (max-width: 800px) { .hud__maps { order: 3; width: 100%; overflow-x: auto; flex-wrap: nowrap; } .lab__panel { top: auto; bottom: 3.8rem; max-height: 46%; } .lab__readout { display: none; } .c { display: none; } }
+</style>

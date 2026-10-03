@@ -1,0 +1,91 @@
+---
+import { getCollection } from 'astro:content';
+import Page from '../../layouts/Page.astro';
+
+const talks = (await getCollection('talks'))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const ytId = (u = '') => u.match(/(?:v=|shorts\/|youtu\.be\/)([\w-]{11})/)?.[1];
+const isPod = (t) => t.data.tags.includes('podcast');
+const conf = talks.filter((t) => !isPod(t));
+const pods = talks.filter(isPod);
+
+const fmt = (d) => d.toLocaleDateString('en-AU', { year: 'numeric', month: 'short', day: 'numeric' });
+const fmtTalk = (t) => {
+  const d = t.data.date, p = t.data.datePrecision;
+  if (p === 'year') return String(d.getFullYear());
+  if (p === 'month') return d.toLocaleDateString('en-AU', { year: 'numeric', month: 'long' });
+  return fmt(d);
+};
+---
+
+<Page title="Talks" description="Conference talks, workshops, and community sessions by Jack Sessions.">
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Talks &amp; workshops</h2><span class="rule"></span>
+        <span class="count">{talks.length} total</span>
+      </div>
+
+      {talks.length === 0 ? (
+        <p class="muted">No talks yet. Add one at <code>src/content/talks/your-talk.md</code>.</p>
+      ) : (
+        <>
+          <h3 class="sub">Conference talks</h3>
+          <div class="grid grid--2">
+            {conf.map((t) => (
+              <div class="card">
+                {ytId(t.data.videoUrl) && (
+                  <a class="thumb" href={t.data.videoUrl} target="_blank" rel="noopener" aria-label={`Watch: ${t.data.title}`}>
+                    <img src={`https://i.ytimg.com/vi/${ytId(t.data.videoUrl)}/hqdefault.jpg`} alt="" loading="lazy" />
+                  </a>
+                )}
+                <span class="meta">{t.data.event}{t.data.location ? ` · ${t.data.location}` : ''} · {fmtTalk(t)}</span>
+                <h3>{t.data.title}</h3>
+                <p>{t.data.description}</p>
+                <div class="tags">
+                  {t.data.tags.map((tag) => <span class="tag">{tag}</span>)}
+                  {t.data.slidesUrl && <a class="tag" href={t.data.slidesUrl} target="_blank" rel="noopener">slides ↗</a>}
+                  {t.data.slidesPptxUrl && <a class="tag" href={t.data.slidesPptxUrl} download>{t.data.slidesUrl ? 'pptx ↓' : 'slides (pptx) ↓'}</a>}
+                  {t.data.videoUrl && <a class="tag" href={t.data.videoUrl} target="_blank" rel="noopener">recording ↗</a>}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {pods.length > 0 && (
+            <>
+              <h3 class="sub">Podcasts &amp; panels</h3>
+              <div class="grid grid--2">
+                {pods.map((t) => (
+                  <div class="card">
+                    {ytId(t.data.videoUrl) && (
+                      <a class="thumb" href={t.data.videoUrl} target="_blank" rel="noopener" aria-label={`Watch: ${t.data.title}`}>
+                        <img src={`https://i.ytimg.com/vi/${ytId(t.data.videoUrl)}/hqdefault.jpg`} alt="" loading="lazy" />
+                      </a>
+                    )}
+                    <span class="meta">{t.data.event} · {fmtTalk(t)}</span>
+                    <h3>{t.data.title}</h3>
+                    <p>{t.data.description}</p>
+                    <div class="tags">
+                      {t.data.tags.filter((x) => x !== 'podcast').map((tag) => <span class="tag">{tag}</span>)}
+                      <a class="tag" href={t.data.videoUrl} target="_blank" rel="noopener">watch ↗</a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  </section>
+</Page>
+
+<style>
+  .sub { margin: 2rem 0 1rem; color: var(--muted); font-family: var(--font-mono); font-size: 0.85rem; letter-spacing: .08em; text-transform: uppercase; }
+  .sub:first-of-type { margin-top: 0; }
+  .thumb { display: block; margin: -0.25rem -0.25rem 0.9rem; border-radius: 8px; overflow: hidden; aspect-ratio: 16 / 9; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .25s; }
+  .thumb:hover img { transform: scale(1.04); }
+</style>

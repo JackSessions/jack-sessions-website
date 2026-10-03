@@ -1,0 +1,43 @@
+---
+import { getCollection } from 'astro:content';
+import Page from '../../layouts/Page.astro';
+
+const projects = (await getCollection('projects')).sort((a, b) => {
+  const f = Number(b.data.featured) - Number(a.data.featured);
+  if (f !== 0) return f;
+  return (b.data.date?.valueOf() ?? 0) - (a.data.date?.valueOf() ?? 0);
+});
+---
+
+<Page title="Projects" description="Open-source tooling, CVEs, and security research by Jack Sessions.">
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Projects &amp; research</h2><span class="rule"></span>
+        <span class="count">{projects.length} total</span>
+      </div>
+
+      {projects.length === 0 ? (
+        <p class="muted">No projects yet. Add one at <code>src/content/projects/your-tool.md</code>.</p>
+      ) : (
+        <div class="grid grid--2">
+          {projects.map((pr) => {
+            const link = pr.data.repoUrl || pr.data.url;
+            const Tag = link ? 'a' : 'div';
+            return (
+              <Tag class="card" href={link} target={link?.startsWith('http') ? '_blank' : undefined} rel="noopener">
+                <span class="meta">{pr.data.status}{pr.data.featured ? ' · featured' : ''}</span>
+                <h3>{pr.data.title}</h3>
+                <p>{pr.data.description}</p>
+                <div class="tags">
+                  {pr.data.tags.map((tag) => <span class="tag">{tag}</span>)}
+                  {pr.data.repoUrl && <span class="tag">repo ↗</span>}
+                </div>
+              </Tag>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  </section>
+</Page>

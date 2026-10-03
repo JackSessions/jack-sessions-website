@@ -1,0 +1,88 @@
+---
+/* A chase along the bottom of every page: OS mascots run off one edge and a new pair comes back. */
+---
+
+<div class="critters" aria-hidden="true">
+  <div class="critter" data-a></div>
+  <div class="critter" data-b></div>
+</div>
+
+<script>
+  const A = document.querySelector('[data-a]');
+  const B = document.querySelector('[data-b]');
+  const wrap = document.querySelector('.critters');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!A || !B || reduce) { wrap && wrap.remove(); }
+  else {
+    const SIZE = 38;
+    const droid = '<svg viewBox="0 0 40 44" width="38" height="42"><g class="legs"><rect class="leg l1" x="12" y="30" width="5" height="12" rx="2.5" fill="#3ddc84"/><rect class="leg l2" x="23" y="30" width="5" height="12" rx="2.5" fill="#3ddc84"/></g><rect x="9" y="17" width="22" height="16" rx="3" fill="#3ddc84"/><rect class="arm a1" x="3" y="18" width="5" height="12" rx="2.5" fill="#3ddc84"/><rect class="arm a2" x="32" y="18" width="5" height="12" rx="2.5" fill="#3ddc84"/><path d="M9 15 a11 11 0 0 1 22 0 z" fill="#3ddc84"/><circle cx="15" cy="10" r="1.4" fill="#0b0f0e"/><circle cx="25" cy="10" r="1.4" fill="#0b0f0e"/><path d="M13 3 L10 -1 M27 3 L30 -1" stroke="#3ddc84" stroke-width="1.6" stroke-linecap="round"/></svg>';
+    const iosIcon = '<svg viewBox="0 0 40 44" width="38" height="42"><g class="legs"><rect class="leg l1" x="12" y="30" width="5" height="12" rx="2.5" fill="#9aa4ad"/><rect class="leg l2" x="23" y="30" width="5" height="12" rx="2.5" fill="#9aa4ad"/></g><rect x="3" y="2" width="34" height="34" rx="9" fill="#1c1f26" stroke="#9aa4ad" stroke-width="1.5"/><text x="20" y="25" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#e8edf2">iOS</text></svg>';
+    const bberry = '<svg viewBox="0 0 40 44" width="38" height="42"><g class="legs"><rect class="leg l1" x="12" y="30" width="5" height="12" rx="2.5" fill="#6b7280"/><rect class="leg l2" x="23" y="30" width="5" height="12" rx="2.5" fill="#6b7280"/></g><rect x="3" y="2" width="34" height="34" rx="8" fill="#0b0b0c" stroke="#6b7280" stroke-width="1.5"/><g fill="#f3f4f6"><rect x="10" y="8" width="6" height="6" rx="1"/><rect x="18" y="8" width="6" height="6" rx="1"/><rect x="26" y="8" width="5" height="6" rx="1"/><rect x="10" y="16" width="6" height="6" rx="1"/><rect x="18" y="16" width="6" height="6" rx="1"/><rect x="14" y="24" width="6" height="6" rx="1"/><rect x="22" y="24" width="6" height="6" rx="1"/></g></svg>';
+    const win = '<svg viewBox="0 0 40 44" width="38" height="42"><g class="legs"><rect class="leg l1" x="12" y="30" width="5" height="12" rx="2.5" fill="#00a4ef"/><rect class="leg l2" x="23" y="30" width="5" height="12" rx="2.5" fill="#00a4ef"/></g><g fill="#00a4ef"><path d="M4 7 L18 5 V18 H4Z"/><path d="M20 4.7 L36 2 V18 H20Z"/><path d="M4 20 H18 V33 L4 31Z"/><path d="M20 20 H36 V36 L20 33.3Z"/></g></svg>';
+    const SPRITES = { android: droid, ios: iosIcon, blackberry: bberry, windows: win, linux: '<span class="emo" title="Linux">🐧</span>', openbsd: '<span class="emo" title="OpenBSD">🐡</span>' };
+    const NAMES = Object.keys(SPRITES);
+    const html = (n) => SPRITES[n];
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    let first = true;
+    let runner, chaser, dir, rx, cx, state, wait, bornAt, sprintUntil, lastDir;
+
+    function spawn() {
+      let pair;
+      if (first) { pair = ['android', 'ios']; first = false; }
+      else {
+        const runnerName = pick(NAMES);
+        pair = [runnerName, pick(NAMES.filter((n) => n !== runnerName))];
+      }
+      dir = Math.random() < 0.5 ? 1 : -1;               // direction the runner heads
+      const w = innerWidth;
+      rx = dir === 1 ? -SIZE - 20 : w + 20;
+      cx = rx - dir * 260;
+      A.innerHTML = html(pair[0]); B.innerHTML = html(pair[1]);
+      state = 'run'; bornAt = performance.now(); sprintUntil = 0;
+    }
+
+    state = 'wait'; wait = performance.now() + 800;
+    let last = performance.now();
+
+    function tick(now) {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      if (state === 'wait') {
+        if (now > wait) spawn();
+      } else {
+        // runner crosses the screen, sprinting when the chaser closes in; dawdles back and forth first
+        if (Math.abs(cx - rx) < 80 && now > sprintUntil) sprintUntil = now + 900;
+        const speed = now < sprintUntil ? 230 : 70;
+        rx += dir * speed * dt;
+        const cd = Math.sign(rx - cx) || dir;
+        cx += cd * 64 * dt;
+        const w = innerWidth;
+        // both gone off the far side -> wait, then a new pair
+        if ((dir === 1 && cx > w + 40) || (dir === -1 && cx < -SIZE - 40)) {
+          state = 'wait'; wait = now + 3000 + Math.random() * 6000;
+          A.style.transform = B.style.transform = 'translateX(-200px)';
+        } else {
+          A.style.transform = `translateX(${rx}px) scaleX(${-dir})`;
+          B.style.transform = `translateX(${cx}px) scaleX(${-cd})`;
+        }
+        A.classList.toggle('sprint', now < sprintUntil);
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+</script>
+
+<style>
+  .critters { position: fixed; left: 0; right: 0; bottom: 0; height: 46px; z-index: 40; pointer-events: none; overflow: hidden; }
+  .critter { position: absolute; bottom: 2px; left: 0; transform: translateX(-200px); will-change: transform; }
+  .critter :global(svg) { display: block; overflow: visible; }
+  .critter :global(.emo) { display: block; font-size: 30px; line-height: 38px; animation: hop .38s ease-in-out infinite alternate; }
+  .critter.sprint :global(.emo) { animation-duration: .16s; }
+  .critter :global(.leg), .critter :global(.arm) { transform-box: fill-box; transform-origin: top center; animation: swing .5s ease-in-out infinite alternate; }
+  .critter :global(.l2), .critter :global(.a1) { animation-direction: alternate-reverse; }
+  .critter.sprint :global(.leg), .critter.sprint :global(.arm) { animation-duration: .18s; }
+  @keyframes swing { from { transform: rotate(22deg); } to { transform: rotate(-22deg); } }
+  @keyframes hop { from { transform: translateY(0) rotate(-6deg); } to { transform: translateY(-5px) rotate(6deg); } }
+  @media (max-width: 640px) { .critters { display: none; } }
+</style>

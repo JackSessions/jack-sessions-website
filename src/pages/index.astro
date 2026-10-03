@@ -1,50 +1,106 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
+import { getCollection } from 'astro:content';
+import Page from '../layouts/Page.astro';
+import Hero from '../components/Hero.astro';
+import Credentials from '../components/Credentials.astro';
+import Contact from '../components/Contact.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+
+const posts = (await getCollection('blog'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 3);
+
+const talks = (await getCollection('talks'))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 3);
+
+const projects = (await getCollection('projects'))
+  .sort((a, b) => Number(b.data.featured) - Number(a.data.featured))
+  .slice(0, 3);
+
+const fmtTalk = (t) => {
+  const d = t.data.date, p = t.data.datePrecision;
+  if (p === 'year') return String(d.getFullYear());
+  if (p === 'month') return d.toLocaleDateString('en-AU', { year: 'numeric', month: 'long' });
+  return fmt(d);
+};
+const fmt = (d) => d.toLocaleDateString('en-AU', { year: 'numeric', month: 'short', day: 'numeric' });
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body>
-		<Header />
-		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This
-				template serves as a lightweight, minimally-styled starting point for anyone looking to build
-				a personal website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to <a href="https://docs.astro.build/"
-					>read the docs
-				</a> or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out <a
-					href="https://github.com/Charca/astro-blog-template"
-					>astro-blog-template
-				</a> by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
-		</main>
-		<Footer />
-	</body>
-</html>
+<Page title={SITE_TITLE} description={SITE_DESCRIPTION}>
+  <Hero />
+  <Credentials />
+
+  <!-- Latest writing -->
+  {posts.length > 0 && (
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Latest writing</h2><span class="rule"></span>
+          <a class="count" href="/blog">all posts →</a>
+        </div>
+        <div class="grid grid--3">
+          {posts.map((p) => (
+            <a class="card" href={`/blog/${p.id}/`}>
+              <span class="meta">{fmt(p.data.pubDate)}</span>
+              <h3>{p.data.title}</h3>
+              <p>{p.data.description}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Recent talks -->
+  {talks.length > 0 && (
+    <section class="section" style="padding-top:0">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>On stage</h2><span class="rule"></span>
+          <a class="count" href="/talks">all talks →</a>
+        </div>
+        <div class="grid grid--3">
+          {talks.map((t) => (
+            <div class="card">
+              <span class="meta">{t.data.event} · {fmtTalk(t)}</span>
+              <h3>{t.data.title}</h3>
+              <p>{t.data.description}</p>
+              <div class="tags">
+                {t.data.slidesUrl && <a class="tag" href={t.data.slidesUrl} target="_blank" rel="noopener">slides</a>}
+                {t.data.slidesPptxUrl && <a class="tag" href={t.data.slidesPptxUrl} download>{t.data.slidesUrl ? 'pptx' : 'slides (pptx)'}</a>}
+                {t.data.videoUrl && <a class="tag" href={t.data.videoUrl} target="_blank" rel="noopener">video</a>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Featured projects -->
+  {projects.length > 0 && (
+    <section class="section" style="padding-top:0">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Selected work</h2><span class="rule"></span>
+          <a class="count" href="/projects">all projects →</a>
+        </div>
+        <div class="grid grid--3">
+          {projects.map((pr) => (
+            <a class="card" href={pr.data.repoUrl || pr.data.url || '/projects'} target={pr.data.repoUrl || pr.data.url ? '_blank' : undefined} rel="noopener">
+              <span class="meta">{pr.data.status}</span>
+              <h3>{pr.data.title}</h3>
+              <p>{pr.data.description}</p>
+              {pr.data.tags.length > 0 && (
+                <div class="tags">{pr.data.tags.map((tag) => <span class="tag">{tag}</span>)}</div>
+              )}
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <Contact />
+</Page>

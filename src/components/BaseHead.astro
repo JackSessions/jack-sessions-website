@@ -1,47 +1,54 @@
 ---
-// Import the global.css file here so that it is included on
-// all pages through the use of the <BaseHead /> component.
+// Goes in every page's <head>. Replaces the starter's BaseHead.astro.
+// Keeps the same props (title, description, image) so the blog layout still works.
 import '../styles/global.css';
+import { SITE_TITLE } from '../consts';
 
 interface Props {
-	title: string;
-	description: string;
-	image?: string;
+  title: string;
+  description: string;
+  image?: string;
 }
-
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-
-const { title, description, image = '/blog-placeholder-1.jpg' } = Astro.props;
+const { title, description, image = '/og.png' } = Astro.props;
 ---
 
-<!-- Global Metadata -->
+<!-- Green/black mode: apply the saved choice before first paint -->
+<script is:inline>try{if(localStorage.getItem('fx')==='mono')document.documentElement.dataset.fx='mono'}catch(e){}</script>
+
+<!-- Global metadata -->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <meta name="generator" content={Astro.generator} />
+<meta name="theme-color" content="#0a0e0c" />
 
-<!-- Font preloads -->
-<link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin />
-<link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin />
+<!-- Fonts (swap to self-hosted @fontsource later if you prefer) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+  rel="stylesheet"
+/>
 
-<!-- Canonical URL -->
+<!-- Canonical -->
 <link rel="canonical" href={canonicalURL} />
 
-<!-- Primary Meta Tags -->
-<title>{title}</title>
+<!-- Primary -->
+<title>{title === SITE_TITLE ? title : `${title} — ${SITE_TITLE}`}</title>
 <meta name="title" content={title} />
 <meta name="description" content={description} />
 
-<!-- Open Graph / Facebook -->
+<!-- Open Graph -->
 <meta property="og:type" content="website" />
-<meta property="og:url" content={Astro.url} />
+<meta property="og:url" content={canonicalURL} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:image" content={new URL(image, Astro.url)} />
 
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image" />
-<meta property="twitter:url" content={Astro.url} />
+<meta property="twitter:url" content={canonicalURL} />
 <meta property="twitter:title" content={title} />
 <meta property="twitter:description" content={description} />
 <meta property="twitter:image" content={new URL(image, Astro.url)} />

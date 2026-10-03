@@ -1,0 +1,102 @@
+---
+/*
+  Interactive ASCII "JACK / SESSIONS" behind the hero photo.
+  The word is sampled into a grid of characters; the cursor (or a finger) scatters them,
+  they spring back, and a click sends a shockwave. Rainbow-drifting, static for reduced motion.
+*/
+---
+
+<canvas class="ascii" data-ascii aria-hidden="true"></canvas>
+
+<script>
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-ascii]')!;
+  const ctx = canvas.getContext('2d')!;
+  const hero = canvas.closest('.hero') as HTMLElement;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const GLYPHS = '01<>/{}[]#$%&*+=;:~ABCDEF';
+
+  type P = { hx: number; hy: number; x: number; y: number; vx: number; vy: number; ch: string; hue: number };
+  let pts: P[] = [], w = 0, h = 0, cell = 10, raf = 0;
+  const mouse = { x: -9999, y: -9999, down: 0 };
+
+  function build() {
+    const r = canvas.getBoundingClientRect();
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    w = r.width; h = r.height;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    cell = w < 640 ? 7 : 10;
+    // draw the words big onto an offscreen canvas, then sample it on a grid
+    const off = document.createElement('canvas');
+    off.width = w; off.height = h;
+    const o = off.getContext('2d')!;
+    const fs = Math.min(w * 0.2, h * 0.26);
+    o.fillStyle = '#fff';
+    o.textAlign = 'center'; o.textBaseline = 'middle';
+    o.font = `900 ${fs}px "Space Grotesk", system-ui, sans-serif`;
+    o.fillText('JACK', w / 2, h * 0.36);
+    o.font = `900 ${fs * 0.62}px "Space Grotesk", system-ui, sans-serif`;
+    o.fillText('SESSIONS', w / 2, h * 0.36 + fs * 0.95);
+    const data = o.getImageData(0, 0, w, h).data;
+
+    pts = [];
+    for (let y = cell / 2; y < h; y += cell) {
+      for (let x = cell / 2; x < w; x += cell) {
+        if (data[((y | 0) * (w | 0) + (x | 0)) * 4 + 3] > 140) {
+          pts.push({ hx: x, hy: y, x, y, vx: 0, vy: 0, ch: GLYPHS[(Math.random() * GLYPHS.length) | 0], hue: (x / w) * 360 });
+        }
+      }
+    }
+  }
+
+  function frame(t: number) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.font = `${cell * 1.15}px "JetBrains Mono", ui-monospace, monospace`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const R = 110, R2 = R * R;
+    const blast = mouse.down > 0 ? mouse.down-- : 0;
+    for (const p of pts) {
+      const dx = p.x - mouse.x, dy = p.y - mouse.y, d2 = dx * dx + dy * dy;
+      if (d2 < R2 * (blast ? 4 : 1) && d2 > 0.01) {
+        const d = Math.sqrt(d2), f = (1 - d / (R * (blast ? 2 : 1))) * (blast ? 9 : 4);
+        p.vx += (dx / d) * f; p.vy += (dy / d) * f;
+        if (Math.random() < 0.15) p.ch = GLYPHS[(Math.random() * GLYPHS.length) | 0];
+      }
+      p.vx += (p.hx - p.x) * 0.07; p.vy += (p.hy - p.y) * 0.07;   // spring home
+      p.vx *= 0.82; p.vy *= 0.82;
+      p.x += p.vx; p.y += p.vy;
+      const disp = Math.min(1, Math.hypot(p.x - p.hx, p.y - p.hy) / 40);
+      const hue = (p.hue + t / 30) % 360;
+      ctx.fillStyle = `hsla(${hue},95%,${60 + disp * 25}%,${0.38 + disp * 0.55})`;
+      ctx.fillText(p.ch, p.x, p.y);
+    }
+    raf = requestAnimationFrame(frame);
+  }
+
+  function still() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.font = `${cell * 1.15}px "JetBrains Mono", ui-monospace, monospace`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const p of pts) { ctx.fillStyle = `hsla(${p.hue},95%,62%,.4)`; ctx.fillText(p.ch, p.x, p.y); }
+  }
+
+  const rel = (e: PointerEvent) => { const r = canvas.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; };
+  hero.addEventListener('pointermove', rel);
+  hero.addEventListener('pointerdown', (e) => { rel(e); mouse.down = 14; });
+  hero.addEventListener('pointerleave', () => { mouse.x = mouse.y = -9999; });
+
+  const start = () => { build(); if (reduce) still(); };
+  document.fonts?.ready.then(start) ?? start();
+  addEventListener('resize', () => { build(); if (reduce) still(); });
+  if (!reduce) {
+    new IntersectionObserver(([e]) => {
+      cancelAnimationFrame(raf);
+      if (e.isIntersecting) raf = requestAnimationFrame(frame);
+    }).observe(canvas);
+  }
+</script>
+
+<style>
+  .ascii { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none; }
+</style>

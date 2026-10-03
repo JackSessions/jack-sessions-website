@@ -1,0 +1,20 @@
+---
+import Page from '../layouts/Page.astro';
+import HomelabMap from '../components/HomelabMap.astro';
+---
+
+<Page title="Homelab" description="Jack Sessions' Proxmox homelab: Tailscale, a Tor relay, a mini PC, a malware lab and a test Active Directory forest, as an interactive 3D map.">
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Homelab</h2><span class="rule"></span>
+        <span class="count">interactive map</span>
+      </div>
+      <p class="muted" style="max-width:56ch">
+        Where the research happens: a Proxmox server, a private Tailscale mesh, a Tor relay, an always-on mini PC,
+        a locked-down malware lab and a throwaway Active Directory forest. Open the map and click around.
+      </p>
+      <HomelabMap />
+    </div>
+  </section>
+</Page>

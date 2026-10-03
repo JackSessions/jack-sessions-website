@@ -1,111 +1,68 @@
 ---
-import BaseHead from '../../components/BaseHead.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
-import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
 import { getCollection } from 'astro:content';
-import FormattedDate from '../../components/FormattedDate.astro';
+import Page from '../../layouts/Page.astro';
 
 const posts = (await getCollection('blog')).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
+const fmt = (d) => d.toLocaleDateString('en-AU', { year: 'numeric', month: 'short', day: 'numeric' });
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-		<style>
-			main {
-				width: 960px;
-			}
-			ul {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 2rem;
-				list-style-type: none;
-				margin: 0;
-				padding: 0;
-			}
-			ul li {
-				width: calc(50% - 1rem);
-			}
-			ul li * {
-				text-decoration: none;
-				transition: 0.2s ease;
-			}
-			ul li:first-child {
-				width: 100%;
-				margin-bottom: 1rem;
-				text-align: center;
-			}
-			ul li:first-child img {
-				width: 100%;
-			}
-			ul li:first-child .title {
-				font-size: 2.369rem;
-			}
-			ul li img {
-				margin-bottom: 0.5rem;
-				border-radius: 12px;
-			}
-			ul li a {
-				display: block;
-			}
-			.title {
-				margin: 0;
-				color: rgb(var(--black));
-				line-height: 1;
-			}
-			.date {
-				margin: 0;
-				color: rgb(var(--gray));
-			}
-			ul li a:hover h4,
-			ul li a:hover .date {
-				color: rgb(var(--accent));
-			}
-			ul a:hover img {
-				box-shadow: var(--box-shadow);
-			}
-			@media (max-width: 720px) {
-				ul {
-					gap: 0.5em;
-				}
-				ul li {
-					width: 100%;
-					text-align: center;
-				}
-				ul li:first-child {
-					margin-bottom: 0;
-				}
-				ul li:first-child .title {
-					font-size: 1.563em;
-				}
-			}
-		</style>
-	</head>
-	<body>
-		<Header />
-		<main>
-			<section>
-				<ul>
-					{
-						posts.map((post) => (
-							<li>
-								<a href={`/blog/${post.id}/`}>
-									<img width={720} height={360} src={post.data.heroImage} alt="" />
-									<h4 class="title">{post.data.title}</h4>
-									<p class="date">
-										<FormattedDate date={post.data.pubDate} />
-									</p>
-								</a>
-							</li>
-						))
-					}
-				</ul>
-			</section>
-		</main>
-		<Footer />
-	</body>
-</html>
+<Page title="Blog" description="Writing by Jack Sessions on mobile security, DFIR, and life around it.">
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Blog</h2><span class="rule"></span>
+        <span class="count">{posts.length} posts</span>
+      </div>
+
+      {posts.length === 0 ? (
+        <p class="muted">No posts yet.</p>
+      ) : (
+        <div class="posts">
+          <div class="posts__head" aria-hidden="true">
+            <span>Date</span><span>Title</span><span>Tags</span>
+          </div>
+          {posts.map((p) => (
+            <details class="post">
+              <summary>
+                <span class="post__date">{fmt(p.data.pubDate)}</span>
+                <span class="post__title">{p.data.title}</span>
+                <span class="post__tags">{p.data.tags.map((t) => <span class="tag">{t}</span>)}</span>
+              </summary>
+              <div class="post__body">
+                <p>{p.data.description}</p>
+                <a class="btn" href={`/blog/${p.id}/`}>Read post →</a>
+              </div>
+            </details>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+</Page>
+
+<style>
+  .posts { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+  .posts__head, summary {
+    display: grid; grid-template-columns: 8rem 1fr auto; gap: 1rem; align-items: center; padding: 0.85rem 1.1rem;
+  }
+  .posts__head { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .post + .post { border-top: 1px solid var(--line); }
+  summary { cursor: pointer; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary:hover { background: color-mix(in oklab, var(--accent) 6%, transparent); }
+  .post__date { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+  .post__title { font-weight: 600; }
+  .post__title::before { content: "▸"; display: inline-block; margin-right: 0.55rem; color: var(--accent); transition: transform .15s; }
+  details[open] .post__title::before { transform: rotate(90deg); }
+  .post__tags { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end; }
+  .post__body { padding: 0.25rem 1.1rem 1.1rem calc(8rem + 2.1rem); }
+  .post__body p { margin: 0 0 0.8rem; color: var(--muted); max-width: 62ch; }
+  @media (max-width: 720px) {
+    .posts__head { display: none; }
+    summary { grid-template-columns: 1fr; gap: 0.3rem; }
+    .post__tags { justify-content: flex-start; }
+    .post__body { padding-left: 1.1rem; }
+  }
+</style>

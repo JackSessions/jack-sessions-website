@@ -1,0 +1,54 @@
+// The "build your own lab" guide. Three tracks, easiest first. Every link was checked when this was written.
+export type Step = { title: string; what: string; why: string; avoid?: string; links: { t: string; u: string }[] };
+export type Track = { id: string; level: string; blurb: string; budget: string; steps: Step[] };
+
+export const TRACKS: Track[] = [
+  {
+    id: 'easy', level: 'Easy: start on the laptop you already own', budget: '$0. Any laptop with 16 GB of RAM.',
+    blurb: 'No new hardware. Learn the habits (isolate, snapshot, log) that every bigger lab depends on.',
+    steps: [
+      { title: 'Install a hypervisor on your PC', what: 'Install VirtualBox (or any desktop hypervisor) and create one Linux VM.', why: 'A VM is a safe, disposable computer. Break it, delete it, make another.', links: [{ t: 'VirtualBox documentation', u: 'https://www.virtualbox.org/wiki/Documentation' }] },
+      { title: 'Isolate the lab network', what: 'Put VMs on an Internal or Host-only network so they cannot reach your home network.', why: 'Targets are vulnerable on purpose. They must never be able to touch your real devices.', avoid: 'Never bridge a vulnerable VM onto your home network.', links: [{ t: 'VirtualBox networking modes', u: 'https://www.virtualbox.org/manual/ch06.html' }] },
+      { title: 'Make snapshots a habit', what: 'Snapshot a VM when it is clean, and again before anything risky.', why: 'Rolling back in seconds is what lets you experiment without fear.', links: [] },
+      { title: 'Add an attacker and a target', what: 'Run Kali as the attacker and OWASP Juice Shop (or another deliberately vulnerable app) as the target.', why: 'Offence teaches defence. Start with something designed to be broken.', links: [{ t: 'Kali documentation', u: 'https://www.kali.org/docs/' }, { t: 'OWASP Juice Shop', u: 'https://owasp.org/www-project-juice-shop/' }] },
+      { title: 'Turn on logging', what: 'Install Sysmon on a Windows VM and look at what your attacks leave behind.', why: 'Seeing the evidence is the bridge from hacking to detecting.', links: [{ t: 'Sysmon', u: 'https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon' }] },
+      { title: 'Practise somewhere guided', what: 'Work through structured rooms and labs alongside your own.', why: 'Guided practice fills gaps you do not know you have.', links: [{ t: 'TryHackMe', u: 'https://tryhackme.com' }, { t: 'Hack The Box', u: 'https://www.hackthebox.com' }] },
+    ],
+  },
+  {
+    id: 'mid', level: 'Intermediate: a mini PC and real network design', budget: 'Roughly a mini PC or an old desktop plus a managed switch. 16 to 64 GB of RAM.',
+    blurb: 'Move from one laptop to an always-on lab with a firewall, VLANs and remote access that does not open a single port.',
+    steps: [
+      { title: 'Install Proxmox on bare metal', what: 'Put Proxmox VE on a spare machine and move your VMs onto it.', why: 'Always-on, snapshot-friendly, and containers (LXC) cost almost nothing.', links: [{ t: 'Proxmox VE documentation', u: 'https://pve.proxmox.com/wiki/Main_Page' }, { t: 'Proxmox network configuration', u: 'https://pve.proxmox.com/wiki/Network_Configuration' }] },
+      { title: 'Put a real firewall at the edge', what: 'Run OPNsense (as a VM or on its own box). The WAN plugs into it and nothing else.', why: 'One choke point to write default-deny rules for everything behind it.', avoid: 'Never plug the WAN into a switch port that carries a LAN VLAN, and never put a lab machine directly on the WAN.', links: [{ t: 'OPNsense documentation', u: 'https://docs.opnsense.org' }] },
+      { title: 'Split the network into VLANs', what: 'Buy a managed switch. Create VLANs for management, trusted devices, DMZ and each lab.', why: 'A compromise in one zone cannot walk into another unless the firewall allows it.', avoid: 'Do not leave management (Proxmox, switch, iDRAC) on the same VLAN as the lab.', links: [] },
+      { title: 'Get in with WireGuard or Tailscale', what: 'Publish one VPN port, or none at all with Tailscale, and administer everything through it.', why: 'Anything exposed to the internet gets scanned within minutes. A VPN shrinks that to a single hardened door.', avoid: 'Do not port-forward Proxmox, SSH, RDP or Git to the internet.', links: [{ t: 'WireGuard', u: 'https://www.wireguard.com/' }, { t: 'OPNsense + WireGuard how-to', u: 'https://docs.opnsense.org/manual/how-tos/wireguard-client.html' }, { t: 'Tailscale docs', u: 'https://tailscale.com/kb' }] },
+      { title: 'Build your first Active Directory range', what: 'Stand up a small domain with a domain controller and a couple of workstations. Microsoft publishes evaluation ISOs, or automate it with GOAD.', why: 'Most real intrusions happen in AD. A throwaway domain lets you attack and defend it.', links: [{ t: 'Microsoft Evaluation Center', u: 'https://www.microsoft.com/en-us/evalcenter' }, { t: 'GOAD', u: 'https://github.com/Orange-Cyberdefense/GOAD' }] },
+      { title: 'See everything: logging and hunting', what: 'Deploy Wazuh or Security Onion, and Velociraptor for endpoint hunting.', why: 'You cannot defend what you cannot see. Attack it, then find yourself in the logs.', links: [{ t: 'Wazuh', u: 'https://documentation.wazuh.com' }, { t: 'Security Onion', u: 'https://docs.securityonion.net' }, { t: 'Velociraptor', u: 'https://docs.velociraptor.app' }] },
+      { title: 'Self-host your own Git', what: 'Run Gitea behind the VPN and keep your notes, scripts and detections in it.', why: 'Your research should not live only on your laptop.', links: [{ t: 'Gitea with Docker', u: 'https://docs.gitea.com/installation/install-with-docker' }] },
+    ],
+  },
+  {
+    id: 'expert', level: 'Expert: a server-class lab (this one)', budget: 'A used enterprise server (mine: Dell R620, 32 cores, 250 GB DDR3, 10 TB) plus a mini PC and a spare laptop.',
+    blurb: 'Many isolated ranges on one box, an air-gapped malware zoo, detections as code and AI agents. This is what the battle maps show.',
+    steps: [
+      { title: 'Be honest about the hardware', what: 'Old enterprise servers are cheap, powerful and loud. DDR3 ECC RAM is inexpensive, but expect high idle power draw and fan noise. Keep the iDRAC management port off every routable network and update the firmware.', why: 'A lot of cores and RAM for very little money is what makes 20 containers and several ranges possible.', avoid: 'Never expose the iDRAC/BMC to the internet.', links: [{ t: 'Proxmox on ZFS', u: 'https://pve.proxmox.com/wiki/ZFS_on_Linux' }, { t: 'Proxmox Backup Server', u: 'https://www.proxmox.com/en/products/proxmox-backup-server/overview' }] },
+      { title: 'One virtual network per range', what: 'Use Proxmox SDN or separate bridges so each range is its own island, and automate rebuilds with Ansible or Terraform.', why: 'Rebuilding a range from code takes minutes, so you can run it, wreck it and reset it without effort.', links: [{ t: 'Proxmox SDN', u: 'https://pve.proxmox.com/pve-docs/chapter-pvesdn.html' }, { t: 'GOAD (automated AD ranges)', u: 'https://github.com/Orange-Cyberdefense/GOAD' }] },
+      { title: 'An air-gapped malware zoo', what: 'LXC containers on an isolated VLAN with no default gateway, a fake internet (INetSim), packet capture, and golden snapshots to revert to.', why: 'Run a sample, watch everything, learn from the capture, then wipe it.', avoid: 'Containers share the host kernel. Keep Windows samples in full VMs, never route the zoo anywhere, and treat the host as a target.', links: [{ t: 'INetSim', u: 'https://www.inetsim.org' }, { t: 'REMnux', u: 'https://remnux.org' }, { t: 'CAPEv2 sandbox', u: 'https://github.com/kevoreilly/CAPEv2' }, { t: 'FLARE-VM', u: 'https://github.com/mandiant/flare-vm' }, { t: 'capa', u: 'https://github.com/mandiant/capa' }] },
+      { title: 'Detections as code', what: 'Write Sigma rules, keep them in Git, test them against Atomic Red Team simulations, and ship them to your SIEM from CI.', why: 'Detections need version control and tests just like software.', links: [{ t: 'Sigma rules', u: 'https://github.com/SigmaHQ/sigma' }, { t: 'sigma-cli', u: 'https://github.com/SigmaHQ/sigma-cli' }, { t: 'pySigma', u: 'https://github.com/SigmaHQ/pySigma' }, { t: 'Atomic Red Team', u: 'https://github.com/redcanaryco/atomic-red-team' }] },
+      { title: 'A DFIR pipeline', what: 'Hunt with Velociraptor, collect triage packages, and keep an evidence store apart from the systems you investigate.', why: 'Cases need chain of custody and a place to work that cannot be tampered with.', links: [{ t: 'Velociraptor', u: 'https://docs.velociraptor.app' }] },
+      { title: 'A mobile and macOS bench', what: 'Android emulators and real devices, iOS research hardware, docker-OSX for macOS, and mitmproxy + Frida in the middle.', why: 'App research needs resettable devices and full visibility of their traffic.', avoid: 'Never sign test devices into personal accounts.', links: [{ t: 'Docker-OSX', u: 'https://github.com/sickcodes/Docker-OSX' }, { t: 'Frida', u: 'https://frida.re/docs/home/' }, { t: 'mitmproxy', u: 'https://mitmproxy.org' }, { t: 'OWASP MASTG', u: 'https://mas.owasp.org/MASTG/' }] },
+      { title: 'AI agents that help the analyst', what: 'Use LangChain and LangGraph to build agents that enrich alerts, pull related logs and write investigation summaries.', why: 'Analysts should start from a briefing, not a raw alert. A human still makes the call.', avoid: 'Log every prompt and tool call, and never let an agent take destructive action unattended.', links: [{ t: 'LangChain docs', u: 'https://docs.langchain.com' }, { t: 'LangGraph', u: 'https://docs.langchain.com/oss/python/langgraph/overview' }] },
+      { title: 'Run a Tor relay safely', what: 'Run a middle relay on dedicated hardware in a DMZ, never an exit node at home.', why: 'Relays help people stay private. Exit nodes carry legal and abuse risk you do not want at your front door.', avoid: 'Do not run a relay on your trusted LAN or on the same box as the lab.', links: [{ t: 'Tor relay types', u: 'https://community.torproject.org/relay/types-of-relays/' }, { t: 'Tor relay guide', u: 'https://community.torproject.org/relay/' }] },
+    ],
+  },
+];
+
+export const NEVER = [
+  { rule: 'Never put the WAN on the LAN', why: 'The WAN cable goes to the firewall\'s WAN port. A WAN plugged into a LAN switch exposes everything on it.' },
+  { rule: 'Never port-forward admin services', why: 'Proxmox, SSH, RDP and Git belong behind a VPN.' },
+  { rule: 'Never give malware a route out', why: 'No default gateway. Fake the internet instead.' },
+  { rule: 'Never run a lab on your trusted network', why: 'Vulnerable by design means isolated by design.' },
+  { rule: 'Never skip snapshots and backups', why: 'Test a restore before you need one.' },
+  { rule: 'Never expose the BMC / iDRAC / management', why: 'Management interfaces are high-value, often outdated targets.' },
+];

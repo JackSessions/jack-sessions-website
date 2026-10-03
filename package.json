@@ -17,9 +17,11 @@
 		"@astrojs/rss": "4.0.14",
 		"@astrojs/sitemap": "3.6.1",
 		"astro": "5.16.9",
+		"three": "^0.186.1",
 		"typescript": "5.9.3"
 	},
 	"devDependencies": {
+		"@types/three": "^0.186.0",
 		"wrangler": "4.136.1"
 	},
 	"engines": {

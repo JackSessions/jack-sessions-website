@@ -1,0 +1,237 @@
+---
+/*
+  The night-vision hero.
+  - Right half  = your photo, natural.
+  - Left half   = the same photo, phosphor-duotone + scanlines (your "analysis" side).
+  - A night-vision lens follows the cursor; it drifts on its own on touch / when idle.
+  - Two labels rotate through all your hats.
+  - Works before you add a photo: drop a front-facing shot at  public/hero.jpg
+    (shoulders up, plain background, evenly lit). Until then a tinted placeholder shows.
+*/
+
+import MatrixRain from './MatrixRain.astro';
+import LoadingTerm from './LoadingTerm.astro';
+
+// Each pair is [left/analysis word, right/output word].
+const PAIRS = [
+  ['researcher', 'speaker'],
+  ['defender',   'breaker'],
+  ['analyst',    'creator'],
+  ['dfir',       'musician'],
+];
+const photo = '/hero.jpg';
+---
+
+<section class="hero" aria-label="Intro">
+  <!-- tinted placeholder sits behind the photo layers -->
+  <div class="hero__placeholder" aria-hidden="true">
+  </div>
+
+  <!-- photo, two clipped copies -->
+  <img class="hero__img hero__img--left"  src={photo} alt="" aria-hidden="true" onerror="this.remove()" />
+  <img class="hero__img hero__img--right" src={photo} alt="Jack" onerror="this.remove()" />
+
+  <!-- the photo is a link to /about -->
+  <a class="hero__photo-link" href="/about" aria-label="About Jack Sessions" title="About me →"></a>
+
+  <!-- scanlines only over the left half -->
+  <div class="hero__scan" aria-hidden="true"></div>
+
+  <!-- matrix rain: powershell/DFIR <-> ARM64 + Java/Kotlin -->
+  <MatrixRain />
+
+  <!-- night-vision lens that follows the pointer -->
+  <div class="hero__lens" aria-hidden="true"></div>
+
+  <LoadingTerm />
+
+  <!-- rotating labels flanking the face -->
+  <div class="hero__label hero__label--left"  data-roles-left>researcher</div>
+  <div class="hero__label hero__label--right" data-roles-right>&lt;speaker&gt;</div>
+
+  <!-- name + tagline + CTAs, bottom center -->
+  <div class="hero__intro">
+    <h1 class="sr-only">Jack Sessions</h1>
+    <p class="hero__type" data-type aria-live="off">I break things, write up how, and talk about it — DFIR and vulnerability research by day, talks, video, and music the rest of the time.</p>
+    <div class="hero__cta">
+      <a class="btn" href="/blog">Read the blog</a>
+      <a class="btn btn--alt" href="/videos">Watch on YouTube</a>
+      <a class="btn btn--ghost" href="/projects">See the work</a>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Typewriter: types a line, holds, deletes, types the next.
+  const el = document.querySelector('[data-type]');
+  const LINES = [
+    'Current Computer Science student at UNSW.',
+    'I break things, write up how, and talk about it — DFIR and vulnerability research by day, talks, video, and music the rest of the time.',
+    'Security researcher. Mobile forensics, anti-forensics and counterintelligence.',
+    'Bounty hunter. Conference speaker. Rapper.',
+  ];
+  if (el && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    let li = 0, ci = 0, deleting = false;
+    const step = () => {
+      const line = LINES[li];
+      ci += deleting ? -2 : 1;
+      el.textContent = line.slice(0, Math.max(0, ci));
+      let delay = deleting ? 18 : 38 + Math.random() * 40;
+      if (!deleting && ci >= line.length) { deleting = true; delay = 2600; }
+      else if (deleting && ci <= 0) { deleting = false; li = (li + 1) % LINES.length; delay = 400; }
+      setTimeout(step, delay);
+    };
+    el.textContent = '';
+    step();
+  }
+</script>
+
+<script define:vars={{ PAIRS }}>
+  const hero = document.querySelector('.hero');
+  const left  = hero.querySelector('[data-roles-left]');
+  const right = hero.querySelector('[data-roles-right]');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finePointer = matchMedia('(pointer: fine)').matches;
+
+  // --- night-vision lens follows the pointer; drifts on its own when idle / on touch ------
+  let tx = 0.3, ty = 0.45, cx = 0.3, cy = 0.45, lastMove = -1e9;
+  hero.addEventListener('pointermove', (e) => {
+    const r = hero.getBoundingClientRect();
+    tx = (e.clientX - r.left) / r.width; ty = (e.clientY - r.top) / r.height; lastMove = performance.now();
+  });
+  function lens(now) {
+    if (now - lastMove > 2500) { tx = 0.5 + 0.2 * Math.sin(now / 2300); ty = 0.42 + 0.12 * Math.sin(now / 1700 + 1); }
+    cx += (tx - cx) * 0.18; cy += (ty - cy) * 0.18;
+    hero.style.setProperty('--px', (cx * 100).toFixed(2) + '%');
+    hero.style.setProperty('--py', (cy * 100).toFixed(2) + '%');
+    if (!reduce) requestAnimationFrame(lens);
+  }
+  requestAnimationFrame(lens);
+
+  // --- rotate the identity labels -------------------------------------
+  let i = 0;
+  function paint(n) {
+    left.textContent  = PAIRS[n][0];
+    right.textContent = '<' + PAIRS[n][1] + '>';
+  }
+  paint(0);
+  if (!reduce) {
+    setInterval(() => {
+      i = (i + 1) % PAIRS.length;
+      [left, right].forEach((el) => { el.classList.add('swap'); });
+      setTimeout(() => { paint(i); [left, right].forEach((el) => el.classList.remove('swap')); }, 220);
+    }, 2600);
+  }
+</script>
+
+<style>
+  .hero {
+    --px: 50%; --py: 42%; --lens: clamp(110px, 17vw, 200px);
+    position: relative;
+    min-height: min(100svh, 760px);
+    overflow: hidden;
+    background: var(--bg);
+    isolation: isolate;
+  }
+
+  /* placeholder (shown when there's no photo, and behind the photo otherwise) */
+  .hero__placeholder {
+    position: absolute; inset: 0; z-index: 0;
+    background:
+      radial-gradient(60% 80% at 28% 45%, color-mix(in oklab, var(--accent) 22%, transparent), transparent 70%),
+      radial-gradient(60% 80% at 72% 45%, color-mix(in oklab, var(--accent-2) 20%, transparent), transparent 70%),
+      linear-gradient(0deg, var(--bg), var(--surface));
+  }
+  /* faint grid */
+  .hero__placeholder::after {
+    content: ""; position: absolute; inset: 0; opacity: .5;
+    background-image:
+      linear-gradient(color-mix(in oklab, var(--line) 60%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in oklab, var(--line) 60%, transparent) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(70% 70% at 50% 45%, #000, transparent 85%);
+  }
+
+  .hero__img {
+    position: absolute; inset: 0; z-index: 1;
+    width: 100%; height: 100%; object-fit: contain; object-position: center center;
+    mix-blend-mode: lighten;
+  }
+  .hero__img--left  {
+    clip-path: circle(var(--lens) at var(--px) var(--py));
+    /* phosphor duotone-ish treatment for the analysis side */
+    filter: grayscale(1) contrast(1.15) brightness(.85) sepia(1) hue-rotate(140deg) saturate(3.2);
+  }
+
+  .hero__photo-link { position: absolute; inset: 0; z-index: 2; cursor: crosshair; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  :global(:root[data-fx="mono"]) .hero__img--left { filter: grayscale(1) contrast(1.15) brightness(.85) sepia(1) hue-rotate(75deg) saturate(3.2); }
+
+  .hero__scan {
+    position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    clip-path: circle(var(--lens) at var(--px) var(--py));
+    background: repeating-linear-gradient(0deg,
+      transparent 0 2px,
+      color-mix(in oklab, var(--accent) 10%, transparent) 2px 3px);
+    mix-blend-mode: screen; opacity: .5;
+  }
+
+  .hero__lens {
+    position: absolute; left: var(--px); top: var(--py); z-index: 4; pointer-events: none;
+    width: calc(var(--lens) * 2); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 18px color-mix(in oklab, var(--accent) 55%, transparent), inset 0 0 28px color-mix(in oklab, var(--accent) 25%, transparent);
+  }
+  .hero__lens::before, .hero__lens::after { content: ""; position: absolute; background: color-mix(in oklab, var(--accent) 70%, transparent); }
+  .hero__lens::before { left: 50%; top: 8%; bottom: 8%; width: 1px; }
+  .hero__lens::after  { top: 50%; left: 8%; right: 8%; height: 1px; }
+
+  .hero__term {
+    position: absolute; top: clamp(5rem, 12vh, 7rem); left: var(--pad); z-index: 5;
+    margin: 0; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5;
+    color: color-mix(in oklab, var(--accent) 85%, white);
+    text-shadow: 0 0 10px color-mix(in oklab, var(--accent) 45%, transparent);
+    background: transparent; border: 0; padding: 0;
+  }
+  .hero__term .p { color: var(--accent-2); }
+
+  .hero__label {
+    position: absolute; top: 46%; z-index: 5; transform: translateY(-50%);
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(2rem, 7vw, 4.6rem); letter-spacing: -0.03em; line-height: 1;
+    transition: opacity .22s ease, transform .22s ease;
+  }
+  .hero__label.swap { opacity: 0; transform: translateY(-50%) translateX(6px); }
+  .hero__label--left, .hero__label--right {
+    background: linear-gradient(90deg, var(--spectrum));
+    background-size: 200% 100%; -webkit-background-clip: text; background-clip: text;
+    color: transparent; animation: label-hue 8s linear infinite;
+    filter: drop-shadow(0 0 16px color-mix(in oklab, var(--accent) 35%, transparent));
+  }
+  .hero__label--left  { left: var(--pad); }
+  .hero__label--right { right: var(--pad); text-align: right; font-family: var(--font-mono); font-weight: 700; animation-direction: reverse; }
+  @keyframes label-hue { to { background-position: 200% 0; } }
+
+  .hero__intro {
+    position: absolute; left: 50%; bottom: clamp(1.5rem, 5vh, 3rem); z-index: 6;
+    transform: translateX(-50%); width: min(100%, var(--maxw));
+    padding-inline: var(--pad); text-align: center;
+  }
+  .hero__intro h1 { font-size: clamp(2.4rem, 7vw, 4rem); }
+  .hero__intro p  { margin: 0.6rem auto 1.1rem; color: var(--text);
+    max-width: 48ch; font-size: clamp(0.95rem, 1.6vw, 1.1rem);
+    text-shadow: 0 2px 20px var(--bg); }
+  .hero__type { min-height: 4.6em; }
+  .hero__type::after { content: '▌'; margin-left: 2px; color: var(--accent); animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .hero__cta { display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap; }
+
+  /* --- mobile: stack, static 50/50, labels ------------- */
+  @media (max-width: 640px) {
+    .hero { min-height: 92svh; }
+    .hero__term { display: none; }
+    .hero__label { top: auto; }
+    .hero__label--left  { top: 16%; }
+    .hero__label--right { top: 16%; transform: translateY(0); }
+  }
+</style>

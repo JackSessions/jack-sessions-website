@@ -1,0 +1,219 @@
+---
+/*
+  A portable-console style screen that opens above the music player when someone hits play and runs for the whole song.
+  All original canvas art: anime-style speed lines, kanji, nightcore sparkle, and a "unixporn"-style
+  tiling-WM desktop rice. Cuts are paced at 3 per second or slower and change colour, not full-screen brightness.
+*/
+---
+
+<section class="montage" data-montage hidden aria-label="Music visualiser">
+  <div class="psp">
+    <div class="psp__screen">
+      <canvas width="960" height="360" data-canvas></canvas>
+      <div class="psp__status" aria-hidden="true">
+        <span class="psp__brand">SESSIONS // PORTABLE</span>
+        <span class="psp__right"><span data-psp-clock>00:00</span><i class="psp__bat"><b></b></i></span>
+      </div>
+      <div class="psp__now" aria-live="polite">
+        <span class="psp__jp" data-psp-jp></span>
+        <span class="psp__en" data-psp-en></span>
+        <span class="psp__note" data-psp-note></span>
+      </div>
+      <div class="psp__boot" data-boot><span>SESSIONS</span><small>PORTABLE AUDIO SYSTEM</small></div>
+      <button class="montage__skip" type="button" data-skip aria-label="Hide visualiser">✕</button>
+      <div class="montage__bar"><span data-prog></span></div>
+    </div>
+    <div class="psp__body" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  </div>
+</section>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-montage]');
+  const cv = root?.querySelector<HTMLCanvasElement>('[data-canvas]');
+  const prog = root?.querySelector<HTMLElement>('[data-prog]');
+  const W = 960, H = 360;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ctx = cv?.getContext('2d');
+
+  const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+  const pet = Array.from({ length: 70 }, () => ({ x: rnd(0, W), y: rnd(-H, H), s: rnd(3, 8), v: rnd(30, 80), r: rnd(0, 6) }));
+  const stars = Array.from({ length: 90 }, () => ({ x: rnd(0, W), y: rnd(0, H), s: rnd(1, 3), p: rnd(0, 6) }));
+  const KANJI = ['夜', 'ハッカー', 'ナイトコア', '侵入', '電脳', 'ネオン', 'システム', '解析'];
+
+  const glow = (c: CanvasRenderingContext2D, color: string, blur = 18) => { c.shadowColor = color; c.shadowBlur = blur; };
+  const text = (c: CanvasRenderingContext2D, t: string, x: number, y: number, size: number, color: string, align: CanvasTextAlign = 'center') => {
+    c.font = `700 ${size}px "Space Grotesk", "Noto Sans JP", system-ui, sans-serif`; c.textAlign = align; c.fillStyle = color; c.fillText(t, x, y);
+  };
+  const mono = (c: CanvasRenderingContext2D, t: string, x: number, y: number, size: number, color: string) => {
+    c.font = `${size}px "JetBrains Mono", ui-monospace, monospace`; c.textAlign = 'left'; c.fillStyle = color; c.fillText(t, x, y);
+  };
+
+  // 1. synthwave sunset + grid
+  function sunset(c: CanvasRenderingContext2D, t: number) {
+    const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#1b0a3a'); g.addColorStop(0.6, '#8a1f78'); g.addColorStop(1, '#ff6a4d');
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    stars.forEach((s) => { c.globalAlpha = 0.5 + 0.5 * Math.sin(t * 3 + s.p); c.fillStyle = '#fff'; c.fillRect(s.x, s.y * 0.5, s.s, s.s); }); c.globalAlpha = 1;
+    const sg = c.createLinearGradient(0, 70, 0, 230); sg.addColorStop(0, '#ffe14a'); sg.addColorStop(1, '#ff3d8b');
+    c.save(); c.beginPath(); c.arc(W / 2, 190, 100, 0, Math.PI * 2); c.clip(); c.fillStyle = sg; c.fillRect(0, 70, W, 240);
+    c.fillStyle = '#8a1f78'; for (let i = 0; i < 7; i++) c.fillRect(0, 170 + i * 16 + ((t * 20) % 16), W, 3 + i);
+    c.restore();
+    c.fillStyle = '#0a0418'; c.fillRect(0, 230, W, H - 230);
+    c.strokeStyle = '#38d6ff'; c.lineWidth = 1.5; glow(c, '#38d6ff', 8);
+    for (let i = -14; i <= 14; i++) { c.beginPath(); c.moveTo(W / 2 + i * 12, 230); c.lineTo(W / 2 + i * 120, H); c.stroke(); }
+    for (let i = 0; i < 9; i++) { const y = 230 + Math.pow((i + (t * 1.2) % 1) / 9, 2.2) * (H - 230); c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+    c.shadowBlur = 0; glow(c, '#ff3d8b', 20); text(c, '夜の街', W / 2, 78, 54, '#fff'); c.shadowBlur = 0;
+  }
+  // 2. unixporn: tiling WM rice
+  function rice(c: CanvasRenderingContext2D, t: number) {
+    c.fillStyle = '#11111b'; c.fillRect(0, 0, W, H);
+    const g = c.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#1e1e2e'); g.addColorStop(1, '#2a1b3d'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#181825'; c.fillRect(0, 0, W, 24);
+    mono(c, ' 1  2  3  4  5', 8, 16, 12, '#cba6f7'); mono(c, 'jack@sessions: ~/rice', 370, 16, 12, '#a6e3a1'); mono(c, `cpu ${20 + Math.floor(10 * Math.sin(t))}%  ram 3.1G  ${new Date().toTimeString().slice(0, 5)}`, 700, 16, 12, '#89dceb');
+    const win = (x: number, y: number, w: number, h: number, col: string, title: string) => {
+      c.strokeStyle = col; c.lineWidth = 2; glow(c, col, 10); c.fillStyle = 'rgba(17,17,27,.92)'; c.fillRect(x, y, w, h); c.strokeRect(x, y, w, h); c.shadowBlur = 0;
+      mono(c, title, x + 8, y + 15, 11, col);
+    };
+    win(10, 34, 440, 316, '#cba6f7', 'kitty - neofetch');
+    const info = ['jack@sessions', '-------------', 'OS: Arch Linux x86_64', 'WM: Hyprland', 'Shell: zsh 5.9', 'Term: kitty', 'CPU: Ryzen 7 @ 4.6GHz', 'Theme: catppuccin-mocha', 'Icons: Papirus-Dark', 'Uptime: 3 days'];
+    info.forEach((l, i) => mono(c, l, 200, 66 + i * 20, 13, i < 2 ? '#f5c2e7' : '#cdd6f4'));
+    ['#f38ba8', '#fab387', '#f9e2af', '#a6e3a1', '#89dceb', '#cba6f7'].forEach((col, i) => { c.fillStyle = col; c.fillRect(200 + i * 22, 278, 20, 14); });
+    c.fillStyle = '#cba6f7'; for (let i = 0; i < 9; i++) c.fillRect(34 + i * 8, 80 + i * 20, 130 - i * 14, 10);
+    win(460, 34, 490, 150, '#89dceb', 'btop');
+    for (let i = 0; i < 40; i++) { const h = 20 + 50 * Math.abs(Math.sin(t * 2 + i * 0.5)); c.fillStyle = '#89dceb'; c.fillRect(472 + i * 11.5, 170 - h, 8, h); }
+    win(460, 194, 490, 156, '#a6e3a1', 'cmatrix');
+    c.fillStyle = '#a6e3a1'; c.font = '13px monospace'; for (let i = 0; i < 38; i++) { const y = 215 + ((t * 90 + i * 37) % 130); c.globalAlpha = 0.4 + (i % 3) * 0.25; c.fillText(String.fromCharCode(0x30a0 + ((i * 7 + Math.floor(t * 8)) % 90)), 472 + i * 12.5, y); } c.globalAlpha = 1;
+  }
+  // 3. nightcore speed lines
+  function speed(c: CanvasRenderingContext2D, t: number) {
+    c.fillStyle = '#0b1030'; c.fillRect(0, 0, W, H);
+    const cxx = W / 2, cyy = H / 2;
+    for (let i = 0; i < 90; i++) {
+      const a = (i / 90) * Math.PI * 2, len = 160 + 140 * Math.abs(Math.sin(i * 12.9 + t * 4)), r0 = 70 + (i % 5) * 18;
+      c.strokeStyle = `hsl(${(i * 7 + t * 120) % 360} 90% 65%)`; c.lineWidth = 1 + (i % 3);
+      c.beginPath(); c.moveTo(cxx + Math.cos(a) * r0, cyy + Math.sin(a) * r0); c.lineTo(cxx + Math.cos(a) * (r0 + len), cyy + Math.sin(a) * (r0 + len)); c.stroke();
+    }
+    stars.forEach((s) => { c.fillStyle = '#fff'; const k = 1 + Math.sin(t * 6 + s.p); c.save(); c.translate(s.x, s.y); c.rotate(s.p + t); c.fillRect(-s.s * k, -0.5, s.s * 2 * k, 1); c.fillRect(-0.5, -s.s * k, 1, s.s * 2 * k); c.restore(); });
+    glow(c, '#ff3d8b', 24); text(c, 'NIGHTCORE', cxx, cyy + 14, 78, '#fff'); c.shadowBlur = 0; text(c, 'ナイトコア  ×1.25', cxx, cyy + 56, 24, '#ffe14a');
+  }
+  // 4. anime-style eye
+  function eye(c: CanvasRenderingContext2D, t: number) {
+    c.fillStyle = '#12082a'; c.fillRect(0, 0, W, H);
+    const g = c.createRadialGradient(W / 2, H / 2, 20, W / 2, H / 2, 420); g.addColorStop(0, '#3a1670'); g.addColorStop(1, '#0a0418'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+    const blink = Math.max(0.08, 1 - Math.max(0, 1 - Math.abs(((t * 0.9) % 2) - 0.1) * 12));
+    c.save(); c.translate(W / 2, H / 2); c.beginPath(); c.moveTo(-250, 20); c.quadraticCurveTo(0, -190 * blink, 250, 20); c.quadraticCurveTo(0, 150 * blink, -250, 20); c.closePath(); c.clip();
+    c.fillStyle = '#fff'; c.fillRect(-260, -200, 520, 400);
+    const ix = Math.sin(t * 1.3) * 30, iy = Math.cos(t) * 8;
+    const ig = c.createRadialGradient(ix, iy, 10, ix, iy, 120); ig.addColorStop(0, '#ff3d8b'); ig.addColorStop(0.5, '#7a3bff'); ig.addColorStop(1, '#1a0b4a');
+    c.fillStyle = ig; c.beginPath(); c.arc(ix, iy, 112, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#05010f'; c.beginPath(); c.arc(ix, iy, 46, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(ix - 38, iy - 42, 22, 0, Math.PI * 2); c.fill(); c.beginPath(); c.arc(ix + 40, iy + 36, 10, 0, Math.PI * 2); c.fill();
+    c.restore();
+    c.strokeStyle = '#05010f'; c.lineWidth = 8; c.beginPath(); c.moveTo(W / 2 - 250, H / 2 + 20); c.quadraticCurveTo(W / 2, H / 2 - 190 * blink, W / 2 + 250, H / 2 + 20); c.stroke();
+    glow(c, '#38d6ff', 14); text(c, 'ハッカー', W / 2, 330, 30, '#38d6ff'); c.shadowBlur = 0;
+  }
+  // 5. sakura over neon skyline
+  function sakura(c: CanvasRenderingContext2D, t: number, dt: number) {
+    const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#2a0f4a'); g.addColorStop(1, '#ff5f6d'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#0a0418'; for (let i = 0; i < 24; i++) { const h = 60 + ((i * 47) % 150); c.fillRect(i * 42, H - h, 34, h); }
+    for (let i = 0; i < 24; i++) for (let j = 0; j < 6; j++) if ((i * 7 + j * 3 + Math.floor(t * 2)) % 5 === 0) { c.fillStyle = i % 2 ? '#38d6ff' : '#ffe14a'; c.fillRect(i * 42 + 6 + j * 4, H - 20 - j * 22, 3, 3); }
+    pet.forEach((p) => { p.y += p.v * dt; p.x += Math.sin(t + p.r) * 20 * dt; if (p.y > H + 10) { p.y = -10; p.x = rnd(0, W); } c.fillStyle = '#ffc2d8'; c.save(); c.translate(p.x, p.y); c.rotate(p.r + t); c.beginPath(); c.ellipse(0, 0, p.s, p.s * 0.55, 0, 0, Math.PI * 2); c.fill(); c.restore(); });
+    glow(c, '#fff', 14); text(c, '桜  /  SAKURA.EXE', W / 2, 120, 46, '#fff'); c.shadowBlur = 0;
+  }
+  // 6. glitch terminal
+  function glitch(c: CanvasRenderingContext2D, t: number) {
+    c.fillStyle = '#05080a'; c.fillRect(0, 0, W, H);
+    const lines = ['$ nmap -sV 10.0.0.0/24', 'PORT   STATE SERVICE', '22/tcp open  ssh', '80/tcp open  http', '$ python exploit.py --target 10.0.0.7', '[+] payload delivered', '[+] shell opened', '$ id', 'uid=0(root) gid=0(root)', 'ACCESS GRANTED'];
+    const off = Math.sin(t * 9) > 0.8 ? 6 : 2;
+    [['#ff0040', -off], ['#00ffe1', off], ['#4af0a2', 0]].forEach(([col, dx]) => lines.forEach((l, i) => mono(c, l, 60 + (dx as number) + (i > 7 ? 0 : 0), 50 + i * 28, 20, col as string)));
+    for (let i = 0; i < 6; i++) { const y = rnd(0, H); c.drawImage(cv!, 0, y, W, 10, rnd(-14, 14), y, W, 10); }
+    c.fillStyle = 'rgba(74,240,162,.06)'; for (let y = 0; y < H; y += 3) c.fillRect(0, y, W, 1);
+    glow(c, '#4af0a2', 20); text(c, 'ACCESS GRANTED', W / 2, 330, 40, '#4af0a2'); c.shadowBlur = 0;
+  }
+  // 7. fast kanji cuts (about 2.5 cuts per second)
+  function cuts(c: CanvasRenderingContext2D, t: number) {
+    const k = Math.floor(t * 2.5), hue = (k * 67) % 360;
+    c.fillStyle = `hsl(${hue} 70% 14%)`; c.fillRect(0, 0, W, H);
+    for (let i = 0; i < 14; i++) { c.strokeStyle = `hsl(${hue} 90% 60%)`; c.lineWidth = 2; c.strokeRect(i * 30 + (t * 40) % 30, i * 12, W - i * 60, H - i * 24); }
+    glow(c, `hsl(${hue} 100% 60%)`, 30); text(c, KANJI[k % KANJI.length], W / 2, 220, 150 + (k % 2) * 20, '#fff'); c.shadowBlur = 0;
+  }
+
+  const SCENES: { dur: number; fn: (c: CanvasRenderingContext2D, t: number, dt: number) => void }[] = [
+    { dur: 8, fn: sunset }, { dur: 8, fn: rice }, { dur: 7, fn: speed }, { dur: 7, fn: eye }, { dur: 8, fn: sakura }, { dur: 8, fn: glitch }, { dur: 8, fn: cuts },
+  ];
+  const TOTAL = SCENES.reduce((a, s) => a + s.dur, 0);
+  const $ = (q: string) => root?.querySelector<HTMLElement>(q);
+  const audio = () => document.querySelector<HTMLAudioElement>('[data-audio]');
+
+  // --- audio analysis (bars along the bottom, gentle pulse on the bass) ----------------------------
+  let actx: AudioContext | null = null, analyser: AnalyserNode | null = null, bins = new Uint8Array(0), hooked = false;
+  function hook() {
+    const el = audio(); if (hooked || !el) return; hooked = true;
+    try {
+      const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      actx = new AC(); const src = actx.createMediaElementSource(el); analyser = actx.createAnalyser(); analyser.fftSize = 128; analyser.smoothingTimeConstant = 0.82;
+      src.connect(analyser); analyser.connect(actx.destination); bins = new Uint8Array(analyser.frequencyBinCount);
+    } catch { analyser = null; }
+  }
+  function bars(c: CanvasRenderingContext2D, t: number) {
+    const n = 40; const bw = W / n; let bass = 0;
+    if (analyser) { analyser.getByteFrequencyData(bins); for (let i = 0; i < 4; i++) bass += bins[i]; bass /= 4 * 255; }
+    for (let i = 0; i < n; i++) {
+      const v = analyser ? bins[Math.floor((i / n) * bins.length * 0.8)] / 255 : 0.25 + 0.2 * Math.sin(t * 3 + i * 0.6);
+      const h = 6 + v * 110; c.fillStyle = `hsla(${(190 + i * 4 + t * 20) % 360}, 90%, 62%, .75)`; c.fillRect(i * bw + 2, H - h, bw - 4, h);
+    }
+    return bass;
+  }
+
+  // --- loop: runs while the song plays, freezes when it is paused ---------------------------------
+  let playing = false, clockT = 0, last = 0, raf = 0, dismissed = false, started = false;
+  function frame(now: number) {
+    if (!ctx || !root) return;
+    const dt = Math.min(0.05, (now - last) / 1000); last = now; if (playing) clockT += dt;
+    const secs = clockT % TOTAL; let acc = 0, idx = 0;
+    for (; idx < SCENES.length; idx++) { if (secs < acc + SCENES[idx].dur) break; acc += SCENES[idx].dur; }
+    const sc = SCENES[Math.min(idx, SCENES.length - 1)];
+    ctx.save(); sc.fn(ctx, secs - acc, dt); ctx.restore(); ctx.shadowBlur = 0;
+    const bass = bars(ctx, clockT);
+    ctx.fillStyle = `rgba(255,255,255,${(0.04 * bass).toFixed(3)})`; ctx.fillRect(0, 0, W, H);   // soft pulse, never a full flash
+    const a = audio(); if (prog && a && a.duration) prog.style.width = `${(a.currentTime / a.duration) * 100}%`;
+    const clk = $('[data-psp-clock]'); if (clk && a) { const m = Math.floor(a.currentTime / 60), s2 = Math.floor(a.currentTime % 60); clk.textContent = `${String(m).padStart(2, '0')}:${String(s2).padStart(2, '0')}`; }
+    if (playing) raf = requestAnimationFrame(frame);
+  }
+  function setTrack(d: { title: string; jp?: string; note?: string }) {
+    const jp = $('[data-psp-jp]'), en = $('[data-psp-en]'), note = $('[data-psp-note]');
+    if (jp) jp.textContent = d.jp ?? ''; if (en) en.textContent = d.title; if (note) note.textContent = d.note ?? '';
+  }
+  function show() {
+    if (!root || !ctx || reduce) return;
+    hook(); if (actx && actx.state === 'suspended') actx.resume();
+    if (!started) { started = true; root.hidden = false; const boot = $('[data-boot]'); boot?.classList.add('on'); setTimeout(() => boot?.classList.remove('on'), 1800); root.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+    else if (dismissed) { dismissed = false; root.hidden = false; }
+  }
+  window.addEventListener('music:play', () => { show(); if (dismissed || !root || root.hidden) return; playing = true; last = performance.now(); cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); });
+  window.addEventListener('music:pause', () => { playing = false; });
+  window.addEventListener('music:track', (e) => setTrack((e as CustomEvent).detail));
+  $('[data-skip]')?.addEventListener('click', () => { dismissed = true; playing = false; cancelAnimationFrame(raf); if (root) root.hidden = true; });
+</script>
+
+<style>
+  .montage { margin-bottom: 1.25rem; }
+  .montage[hidden] { display: none; }
+  .psp { padding: 14px 14px 10px; border-radius: 26px; background: linear-gradient(160deg, #1d2230, #0b0e16 55%, #161b28); border: 1px solid #2c3446; box-shadow: 0 10px 40px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .08); }
+  .psp__screen { position: relative; border-radius: 12px; overflow: hidden; border: 2px solid #05070b; background: #000; box-shadow: 0 0 24px color-mix(in oklab, var(--accent) 35%, transparent); }
+  .psp__screen canvas { display: block; width: 100%; height: auto; }
+  .psp__screen::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .12) 0 1px, transparent 1px 3px), radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, .55)); }
+  .psp__status { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0.35rem 0.8rem; font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: .12em; color: #e8f6ff; background: linear-gradient(rgba(0, 0, 0, .6), transparent); z-index: 2; }
+  .psp__right { display: flex; align-items: center; gap: 0.5rem; }
+  .psp__bat { display: inline-block; width: 22px; height: 10px; border: 1px solid #e8f6ff; border-radius: 2px; padding: 1px; } .psp__bat b { display: block; height: 100%; width: 80%; background: #4af0a2; }
+  .psp__now { position: absolute; left: 0; right: 0; bottom: 0; padding: 0.6rem 1rem 3rem; display: grid; gap: 0.1rem; background: linear-gradient(transparent, rgba(0, 0, 0, .65)); z-index: 2; }
+  .psp__jp { font-family: "Noto Sans JP", system-ui, sans-serif; font-weight: 700; font-size: clamp(1.4rem, 4.2vw, 2.4rem); color: #fff; text-shadow: 0 0 14px color-mix(in oklab, var(--accent) 70%, transparent); letter-spacing: .08em; }
+  .psp__en { font-family: var(--font-mono); font-size: clamp(0.72rem, 1.5vw, 0.95rem); letter-spacing: .2em; text-transform: uppercase; color: var(--accent); }
+  .psp__note { font-family: var(--font-mono); font-size: 0.7rem; color: #9fb4bd; }
+  .psp__boot { position: absolute; inset: 0; z-index: 4; display: grid; place-content: center; text-align: center; background: radial-gradient(circle, #1b2d6b, #060914 70%); opacity: 0; pointer-events: none; transition: opacity .6s ease; }
+  .psp__boot.on { opacity: 1; } .psp__boot span { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 6vw, 3.2rem); letter-spacing: .5em; color: #fff; text-indent: .5em; } .psp__boot small { font-family: var(--font-mono); letter-spacing: .3em; font-size: 0.7rem; color: #8fb8ff; margin-top: 0.4rem; }
+  .psp__body { display: flex; justify-content: center; gap: 0.8rem; padding-top: 8px; } .psp__body i { width: 7px; height: 7px; border-radius: 50%; background: #2c3446; }
+  .montage__bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, .15); z-index: 3; }
+  .montage__bar span { display: block; height: 100%; width: 0; background: var(--accent); }
+  .montage__skip { position: absolute; top: 28px; right: 8px; z-index: 5; width: 1.7rem; height: 1.7rem; border-radius: 50%; border: 1px solid #3a4560; background: rgba(0, 0, 0, .65); color: #e8f6ff; cursor: pointer; font: inherit; }
+  .montage__skip:hover { border-color: var(--accent); color: var(--accent); }
+</style>

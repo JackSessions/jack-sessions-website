@@ -1,0 +1,68 @@
+---
+/* Hidden stuff. Konami code -> access granted + rainbow ARM64 downpour; typing "sudo" -> a toast. */
+---
+
+<div class="egg" data-egg hidden aria-live="polite"></div>
+
+<script>
+  const MSG = [
+    '%c jack.sessions ',
+    'background:#0a0e0c;color:#38d6ff;font:bold 14px monospace;padding:6px',
+  ];
+  console.log(...MSG);
+  console.log('%cReading the console? Good instinct. Say hi: JackSessions@protonmail.com — try ↑↑↓↓←→←→BA', 'font:12px monospace;color:#ffb02e');
+
+  const el = document.querySelector<HTMLElement>('[data-egg]')!;
+  const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+  let ki = 0, typed = '';
+  let busy = false;
+
+  function toast(text: string, ms = 3500) {
+    el.textContent = text; el.hidden = false; el.className = 'egg egg--toast';
+    setTimeout(() => (el.hidden = true), ms);
+  }
+
+  function downpour() {
+    if (busy) return; busy = true;
+    const c = document.createElement('canvas');
+    c.style.cssText = 'position:fixed;inset:0;z-index:9998;pointer-events:none;width:100%;height:100%';
+    document.body.appendChild(c);
+    const x = c.getContext('2d')!;
+    const W = (c.width = innerWidth), H = (c.height = innerHeight);
+    const fs = 16, cols = Math.floor(W / fs);
+    const drops = Array.from({ length: cols }, () => Math.random() * -40);
+    const SET = ['ldr','str','stp','ldp','bl','blr','ret','svc','mov','eor','x0','x29','x30','sp','#0'];
+    const t0 = performance.now();
+    el.textContent = 'ACCESS GRANTED — you found the egg  🥚  flag{hats_off_to_you}';
+    el.hidden = false; el.className = 'egg egg--big';
+    (function loop(t: number) {
+      x.fillStyle = 'rgba(10,14,12,.14)'; x.fillRect(0, 0, W, H);
+      x.font = `${fs}px monospace`;
+      drops.forEach((d, i) => {
+        x.fillStyle = `hsl(${(i * 9 + t / 8) % 360},100%,62%)`;
+        x.fillText(SET[(Math.random() * SET.length) | 0], i * fs, d * fs);
+        drops[i] = d * fs > H && Math.random() > 0.96 ? 0 : d + 1;
+      });
+      if (t - t0 < 6500) requestAnimationFrame(loop);
+      else { c.remove(); el.hidden = true; busy = false; }
+    })(t0);
+  }
+
+  addEventListener('keydown', (e) => {
+    if ((e.target as HTMLElement)?.matches?.('input,textarea')) return;
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    ki = k === KONAMI[ki] ? ki + 1 : k === KONAMI[0] ? 1 : 0;
+    if (ki === KONAMI.length) { ki = 0; downpour(); }
+    typed = (typed + k).slice(-4);
+    if (typed === 'sudo') toast('jack is not in the sudoers file. This incident will be reported.');
+  });
+</script>
+
+<style is:global>
+  .egg { position: fixed; z-index: 9999; left: 50%; transform: translateX(-50%); font-family: var(--font-mono);
+    background: var(--surface); color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius);
+    padding: .7rem 1.1rem; box-shadow: 0 0 30px color-mix(in oklab, var(--accent) 40%, transparent); max-width: 92vw; text-align: center; }
+  .egg--toast { bottom: 1.5rem; }
+  .egg--big { top: 42%; font-size: clamp(1rem, 3vw, 1.6rem); font-weight: 700; }
+  .egg[hidden] { display: none; }
+</style>

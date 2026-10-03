@@ -1,0 +1,68 @@
+---
+import Page from '../../layouts/Page.astro';
+import { TRACKS, NEVER } from '../../data/labguide';
+---
+
+<Page title="Build your own homelab" description="A step-by-step guide to building a security homelab, from a laptop to a server-class lab, with links to the official docs.">
+  <section class="section">
+    <div class="wrap guide">
+      <div class="section-head">
+        <h2>Build your own lab</h2><span class="rule"></span>
+        <a class="count" href="/homelab">← the lab map</a>
+      </div>
+      <p class="lead">Three tracks, easiest first. Start where you are. Each step says what to do, why, and what not to do, and links to the official docs.</p>
+
+      <nav class="jump" aria-label="Tracks">
+        {TRACKS.map((t) => <a href={`#${t.id}`}>{t.level.split(':')[0]}</a>)}
+        <a href="#never">Never do this</a>
+      </nav>
+
+      {TRACKS.map((t) => (
+        <section class="track" id={t.id}>
+          <h3>{t.level}</h3>
+          <p class="muted">{t.blurb}</p>
+          <p class="budget"><b>Budget:</b> {t.budget}</p>
+          <ol class="steps">
+            {t.steps.map((s) => (
+              <li>
+                <h4>{s.title}</h4>
+                <p>{s.what}</p>
+                <p class="why"><b>Why:</b> {s.why}</p>
+                {s.avoid && <p class="avoid"><b>Avoid:</b> {s.avoid}</p>}
+                {s.links.length > 0 && <p class="links">{s.links.map((l) => <a href={l.u} target="_blank" rel="noopener">{l.t} ↗</a>)}</p>}
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))}
+
+      <section class="track" id="never">
+        <h3>The never-do-this list</h3>
+        <div class="grid grid--2">
+          {NEVER.map((n) => <div class="card"><h3>{n.rule}</h3><p>{n.why}</p></div>)}
+        </div>
+      </section>
+
+      <p class="cta">Want to test your own design? Open the <a href="/homelab#map-build">range builder</a>. It grades your network live and lets you attack it.</p>
+    </div>
+  </section>
+</Page>
+
+<style>
+  .guide { max-width: 52rem; }
+  .lead { color: var(--muted); max-width: 60ch; }
+  .jump { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.2rem 0 2rem; }
+  .jump a { border: 1px solid var(--line); border-radius: 999px; padding: 0.25rem 0.9rem; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text); text-decoration: none; }
+  .jump a:hover { border-color: var(--accent-2); color: var(--accent-2); }
+  .track { margin: 2.5rem 0; scroll-margin-top: 5rem; }
+  .track > h3 { font-size: 1.4rem; margin-bottom: 0.3rem; }
+  .budget { margin-top: 0.4rem; }
+  .steps { list-style: none; counter-reset: s; padding: 0; margin: 1.2rem 0 0; display: grid; gap: 1rem; }
+  .steps li { counter-increment: s; position: relative; padding: 1rem 1.1rem 1rem 3.4rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .steps li::before { content: counter(s, decimal-leading-zero); position: absolute; left: 1rem; top: 1rem; font-family: var(--font-mono); font-weight: 700; color: var(--accent-2); }
+  .steps h4 { margin: 0 0 0.4rem; }
+  .steps p { margin: 0 0 0.4rem; max-width: none; }
+  .why { color: var(--muted); } .avoid { color: #ff8a8a; } .avoid b { color: #ff4d5e; }
+  .links { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.9rem; }
+  .cta { margin-top: 2rem; }
+</style>

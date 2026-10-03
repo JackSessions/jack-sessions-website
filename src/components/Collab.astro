@@ -1,0 +1,27 @@
+---
+/* "Work with me" block: each button opens a pre-filled email. */
+import { SOCIALS } from '../consts';
+const to = SOCIALS.email.replace('mailto:', '');
+const mail = (subject, body) => `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+const OPTIONS = [
+  { label: 'Research together', cls: 'btn', href: mail('Research collab', "Hi Jack,\n\nI'd like to collaborate on research.\n\nTopic:\nWhat I bring:\nTimeline:\n") },
+  { label: 'Invite me to speak', cls: 'btn btn--alt', href: mail('Speaking invite', "Hi Jack,\n\nI'd like to invite you to speak.\n\nEvent:\nDate:\nFormat:\n") },
+  { label: 'Make music', cls: 'btn btn--ghost', href: mail('Music collab', "Hi Jack,\n\nLet's make something.\n\nWhat I do:\nLinks:\n") },
+  { label: 'Something else', cls: 'btn btn--ghost', href: mail('Hello', 'Hi Jack,\n\n') },
+];
+---
+
+<section class="collab" aria-label="Collaborate">
+  <h3>Want to collaborate?</h3>
+  <p>Mobile research, DFIR, a talk, a verse. If it's interesting, I'm in. Pick one and it opens an email.</p>
+  <div class="collab__cta">
+    {OPTIONS.map((o) => <a class={o.cls} href={o.href}>{o.label}</a>)}
+  </div>
+</section>
+
+<style>
+  .collab { margin-top: 3rem; padding: 1.5rem; border: 1px dashed var(--accent); border-radius: var(--radius); background: color-mix(in oklab, var(--accent) 5%, var(--surface)); }
+  .collab h3 { margin: 0 0 0.4rem; }
+  .collab p { margin: 0 0 1rem; color: var(--muted); max-width: 52ch; }
+  .collab__cta { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+</style>

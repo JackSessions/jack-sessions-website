@@ -1,0 +1,46 @@
+---
+/* Terminal-style contact card with a copy-email button. Closes the homepage. */
+import { SOCIALS } from '../consts';
+const email = SOCIALS.email.replace('mailto:', '');
+---
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Get in touch</h2><span class="rule"></span>
+    </div>
+
+    <div class="contact">
+      <pre class="contact__term" aria-hidden="true"><span class="p">~/jack</span> $ mail -s "hello" {email}</pre>
+      <div class="contact__cta">
+        <a class="btn" href={SOCIALS.email}>Email me</a>
+        <a class="btn btn--alt" href={`${SOCIALS.email}?subject=${encodeURIComponent('Collab')}`}>Collab with me</a>
+        <button class="btn btn--ghost" type="button" data-copy={email}>Copy address</button>
+        <a class="btn btn--ghost" href={SOCIALS.linkedin} target="_blank" rel="noopener">LinkedIn</a>
+        <a class="btn btn--alt" href={SOCIALS.youtube} target="_blank" rel="noopener">YouTube</a>
+      </div>
+      <p class="contact__addr mono">{email}</p>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(btn.dataset.copy!);
+        const t = btn.textContent;
+        btn.textContent = 'Copied ✓';
+        setTimeout(() => (btn.textContent = t), 1600);
+      } catch { /* clipboard blocked: the address is shown below anyway */ }
+    });
+  });
+</script>
+
+<style>
+  .contact { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.25rem; }
+  .contact__term { margin: 0 0 1rem; background: transparent; border: 0; padding: 0; color: var(--accent); overflow-x: auto; }
+  .contact__term .p { color: var(--accent-2); }
+  .contact__cta { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  .contact__addr { margin-top: 0.9rem; color: var(--muted); }
+</style>

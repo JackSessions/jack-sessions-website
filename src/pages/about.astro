@@ -1,62 +1,149 @@
 ---
-import Layout from '../layouts/BlogPost.astro';
+import Page from '../layouts/Page.astro';
+import Collab from '../components/Collab.astro';
+import { GALLERY } from '../data/gallery';
+
+const CERTS = [
+  { name: 'GCFA', note: 'GIAC Certified Forensic Analyst', badge: '/giac-certified-forensic-analyst-gcfa.png' },
+  { name: 'BTL1', note: 'Blue Team Level 1', badge: '/btl1.png' },
+  { name: 'Security+', note: 'CompTIA Security+', badge: '/security-plus.png' },
+];
+
+const CVES = [
+  { id: 'CVE-2025-50861', title: 'Exported deep-link activity', text: 'Lotus Cars Android app 1.2.8: PushDeepLinkActivity is exported and reachable without authentication via ADB or a malicious app, risking denial of service or logic abuse.' },
+  { id: 'CVE-2025-50862', title: 'ADB backup data exposure', text: 'Lotus Cars Android app 1.2.8: allowBackup=true in the manifest allows user data to be pulled over ADB backup on rooted or debug-enabled devices.' },
+];
+
+const FOCUS = [
+  { t: 'Mobile security', d: 'Android APK analysis, iOS bootchain and Secure Enclave research, and runtime instrumentation.', link: '/talks' },
+  { t: 'Anti-forensics & counterintelligence', d: 'How devices and people hide, spoof and mislead, and how investigators see through it.', link: '/talks' },
+  { t: 'DFIR', d: 'Memory, disk and telemetry forensics, including how game cheats leave footprints.', link: '/talks' },
+  { t: 'Crypto investigations', d: 'Tracing funds and building evidence trails for cases that cross borders.', link: '/videos' },
+];
 ---
 
-<Layout
-	title="About Me"
-	description="Lorem ipsum dolor sit amet"
-	pubDate={new Date('August 08 2021')}
-	heroImage="/blog-placeholder-about.jpg"
->
-	<p>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-		labore et dolore magna aliqua. Vitae ultricies leo integer malesuada nunc vel risus commodo
-		viverra. Adipiscing enim eu turpis egestas pretium. Euismod elementum nisi quis eleifend quam
-		adipiscing. In hac habitasse platea dictumst vestibulum. Sagittis purus sit amet volutpat. Netus
-		et malesuada fames ac turpis egestas. Eget magna fermentum iaculis eu non diam phasellus
-		vestibulum lorem. Varius sit amet mattis vulputate enim. Habitasse platea dictumst quisque
-		sagittis. Integer quis auctor elit sed vulputate mi. Dictumst quisque sagittis purus sit amet.
-	</p>
+<Page title="About" description="About Jack Sessions: security researcher in mobile security, DFIR and counterintelligence.">
+  <section class="section">
+    <div class="wrap about">
+      <div class="section-head">
+        <h2>About</h2><span class="rule"></span>
+      </div>
 
-	<p>
-		Morbi tristique senectus et netus. Id semper risus in hendrerit gravida rutrum quisque non
-		tellus. Habitasse platea dictumst quisque sagittis purus sit amet. Tellus molestie nunc non
-		blandit massa. Cursus vitae congue mauris rhoncus. Accumsan tortor posuere ac ut. Fringilla urna
-		porttitor rhoncus dolor. Elit ullamcorper dignissim cras tincidunt lobortis. In cursus turpis
-		massa tincidunt dui ut ornare lectus. Integer feugiat scelerisque varius morbi enim nunc.
-		Bibendum neque egestas congue quisque egestas diam. Cras ornare arcu dui vivamus arcu felis
-		bibendum. Dignissim suspendisse in est ante in nibh mauris. Sed tempus urna et pharetra pharetra
-		massa massa ultricies mi.
-	</p>
+      <div class="intro">
+        <img class="intro__photo" src="/speaking.jpg" alt="Jack Sessions presenting on stage" width="400" height="225" />
+        <div>
+          <p class="bio">
+            I'm Jack Sessions, a security researcher working in mobile security, digital forensics and
+            incident response, and vulnerability research. I'm a current Computer Science student at UNSW,
+            and I rap in my spare time.
+          </p>
+          <p class="tads" data-type aria-label="Bio">
+            Security Researcher (Mobile). Bounty hunter for the US Diplomatic Security Service, helping
+            12 countries' security services find and track cyber criminals. Contributes to many open source
+            projects with a focus on mobile security and AppSec. Works on phone and device security,
+            particularly anti-forensics and counter intelligence.
+          </p>
+        </div>
+      </div>
 
-	<p>
-		Mollis nunc sed id semper risus in. Convallis a cras semper auctor neque. Diam sit amet nisl
-		suscipit. Lacus viverra vitae congue eu consequat ac felis donec. Egestas integer eget aliquet
-		nibh praesent tristique magna sit amet. Eget magna fermentum iaculis eu non diam. In vitae
-		turpis massa sed elementum. Tristique et egestas quis ipsum suspendisse ultrices. Eget lorem
-		dolor sed viverra ipsum. Vel turpis nunc eget lorem dolor sed viverra. Posuere ac ut consequat
-		semper viverra nam. Laoreet suspendisse interdum consectetur libero id faucibus. Diam phasellus
-		vestibulum lorem sed risus ultricies tristique. Rhoncus dolor purus non enim praesent elementum
-		facilisis. Ultrices tincidunt arcu non sodales neque. Tempus egestas sed sed risus pretium quam
-		vulputate. Viverra suspendisse potenti nullam ac tortor vitae purus faucibus ornare. Fringilla
-		urna porttitor rhoncus dolor purus non. Amet dictum sit amet justo donec enim.
-	</p>
+      <h3>What I work on</h3>
+      <div class="grid grid--2 focus">
+        {FOCUS.map((f) => (
+          <a class="card" href={f.link}>
+            <h3>{f.t}</h3>
+            <p>{f.d}</p>
+          </a>
+        ))}
+      </div>
 
-	<p>
-		Mattis ullamcorper velit sed ullamcorper morbi tincidunt. Tortor posuere ac ut consequat semper
-		viverra. Tellus mauris a diam maecenas sed enim ut sem viverra. Venenatis urna cursus eget nunc
-		scelerisque viverra mauris in. Arcu ac tortor dignissim convallis aenean et tortor at. Curabitur
-		gravida arcu ac tortor dignissim convallis aenean et tortor. Egestas tellus rutrum tellus
-		pellentesque eu. Fusce ut placerat orci nulla pellentesque dignissim enim sit amet. Ut enim
-		blandit volutpat maecenas volutpat blandit aliquam etiam. Id donec ultrices tincidunt arcu. Id
-		cursus metus aliquam eleifend mi.
-	</p>
+      <h3>Research &amp; recognition</h3>
+      <div class="cves">
+        {CVES.map((c) => (
+          <a class="cve" href={`https://nvd.nist.gov/vuln/detail/${c.id}`} target="_blank" rel="noopener">
+            <span class="mono cve__id">{c.id}</span>
+            <strong>{c.title}</strong>
+            <span class="cve__text">{c.text}</span>
+          </a>
+        ))}
+      </div>
+      <p class="muted more">More research is presented on the <a href="/talks">talks</a> page, with slides for most sessions.</p>
 
-	<p>
-		Tempus quam pellentesque nec nam aliquam sem. Risus at ultrices mi tempus imperdiet. Id porta
-		nibh venenatis cras sed felis eget velit. Ipsum a arcu cursus vitae. Facilisis magna etiam
-		tempor orci eu lobortis elementum. Tincidunt dui ut ornare lectus sit. Quisque non tellus orci
-		ac. Blandit libero volutpat sed cras. Nec tincidunt praesent semper feugiat nibh sed pulvinar
-		proin gravida. Egestas integer eget aliquet nibh praesent tristique magna.
-	</p>
-</Layout>
+      <h3>Photo reel</h3>
+      <div class="reel" tabindex="0" aria-label="Photo reel">
+        {GALLERY.map((g) => (
+          <figure>
+            <img src={g.src} alt={g.alt} loading="lazy" />
+            {g.caption && <figcaption>{g.caption}</figcaption>}
+          </figure>
+        ))}
+      </div>
+
+      <h3>Certifications</h3>
+      <ul class="certs">
+        {CERTS.map((c) => (
+          <li>
+            <img src={c.badge} alt="" width="84" height="84" />
+            <span><strong>{c.name}</strong><br /><span class="muted">{c.note}</span></span>
+          </li>
+        ))}
+      </ul>
+      <p class="muted more">Working toward GEIR. Verify on <a href="https://www.credly.com/users/jack_sessions" target="_blank" rel="noopener">Credly</a>.</p>
+
+      <h3>Education</h3>
+      <p>UNSW, Bachelor of Computer Science <span class="muted">(expected 2028)</span></p>
+
+      <Collab />
+    </div>
+  </section>
+</Page>
+
+<script>
+  // Typewriter: types each bio line, holds, deletes, moves on.
+  const el = document.querySelector<HTMLElement>('[data-type]');
+  const LINES = [
+    'Security Researcher (Mobile).',
+    "Bounty hunter for the US Diplomatic Security Service, helping 12 countries' security services find and track cyber criminals.",
+    'Contributes to many open source projects with a focus on mobile security and AppSec.',
+    'Works on phone and device security, particularly anti-forensics and counter intelligence.',
+  ];
+  if (el && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    let li = 0, ci = 0, del = false;
+    el.textContent = '';
+    const step = () => {
+      const line = LINES[li];
+      ci += del ? -3 : 1;
+      el.textContent = line.slice(0, Math.max(0, ci));
+      let delay = del ? 14 : 30 + Math.random() * 35;
+      if (!del && ci >= line.length) { del = true; delay = 2800; }
+      else if (del && ci <= 0) { del = false; li = (li + 1) % LINES.length; delay = 450; }
+      setTimeout(step, delay);
+    };
+    step();
+  }
+</script>
+
+<style>
+  .about { max-width: 58rem; }
+  h3 { margin: 2.5rem 0 0.9rem; }
+  .intro { display: grid; gap: 1.5rem; align-items: start; }
+  @media (min-width: 48rem) { .intro { grid-template-columns: 20rem 1fr; } }
+  .intro__photo { width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--line); }
+  .bio { margin: 0 0 1rem; max-width: none; }
+  .tads { margin: 0; padding-left: 1rem; border-left: 2px solid var(--accent); color: var(--muted); max-width: 62ch; min-height: 6.5em; font-family: var(--font-mono); font-size: 0.92rem; }
+  .tads::after { content: '▌'; margin-left: 2px; color: var(--accent); animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .focus .card h3 { margin: 0; font-size: 1.05rem; }
+  .cves { display: grid; gap: 0.75rem; }
+  .cve { display: grid; gap: 0.25rem; padding: 1rem 1.1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); color: inherit; text-decoration: none; }
+  .cve:hover { border-color: var(--accent); }
+  .cve__id { color: var(--accent); font-size: 0.8rem; }
+  .cve__text { color: var(--muted); font-size: 0.92rem; }
+  .more { margin-top: 0.8rem; max-width: none; }
+  .reel { display: flex; gap: 1rem; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 0.6rem; }
+  .reel figure { margin: 0; flex: 0 0 min(80%, 22rem); scroll-snap-align: start; }
+  .reel img { width: 100%; height: 15rem; object-fit: cover; border-radius: var(--radius); border: 1px solid var(--line); display: block; }
+  .reel figcaption { margin-top: 0.4rem; color: var(--muted); font-size: 0.85rem; }
+  .certs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 1.5rem 2.5rem; }
+  .certs li { display: flex; align-items: center; gap: 0.9rem; }
+  .certs img { object-fit: contain; }
+</style>

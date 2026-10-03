@@ -1,0 +1,78 @@
+---
+/*
+  Top-left hero terminal. Types a random command from src/data/loading.ts, then fills a
+  Minecraft-style loading bar with what it's "doing". Picks a random entry on every page
+  load; cycles while the page is visible (static for prefers-reduced-motion).
+*/
+---
+
+<pre class="term" aria-hidden="true"><span class="p">~/jack</span> $ whoami
+jack.sessions — security researcher
+<span class="p">~/jack</span> $ <span data-cmd>cat ./hats.txt</span><span class="caret">▍</span>
+<span data-out class="out"></span></pre>
+
+<script>
+  import { LOADING } from '../data/loading';
+
+  const cmdEl = document.querySelector<HTMLElement>('[data-cmd]')!;
+  const outEl = document.querySelector<HTMLElement>('[data-out]')!;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const BAR = 14;
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  let bag: number[] = [];
+  function next(): [string, string] {
+    if (!bag.length) {
+      bag = LOADING.map((_, i) => i);
+      for (let i = bag.length - 1; i > 0; i--) {            // Fisher–Yates
+        const j = Math.floor(Math.random() * (i + 1));
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+      }
+    }
+    return LOADING[bag.pop()!];
+  }
+
+  const bar = (pct: number) => {
+    const n = Math.round((pct / 100) * BAR);
+    return '█'.repeat(n) + '░'.repeat(BAR - n);
+  };
+
+  if (reduce) {
+    const [cmd, msg] = next();
+    cmdEl.textContent = cmd;
+    outEl.textContent = `[${bar(100)}] ${msg}`;
+  } else {
+    (async () => {
+      for (;;) {
+        const [cmd, msg] = next();
+        if (document.hidden) { await sleep(1000); continue; }
+        cmdEl.textContent = '';
+        outEl.textContent = '';
+        for (const ch of cmd) { cmdEl.textContent += ch; await sleep(22 + Math.random() * 30); }
+        await sleep(180);
+        for (let p = 0; p <= 100; p += 4 + Math.floor(Math.random() * 9)) {
+          outEl.textContent = `[${bar(Math.min(p, 100))}] ${String(Math.min(p, 100)).padStart(3)}%  ${msg}`;
+          await sleep(60 + Math.random() * 90);
+        }
+        outEl.textContent = `[${bar(100)}] done  ${msg}`;
+        await sleep(2600);
+      }
+    })();
+  }
+</script>
+
+<style>
+  .term {
+    position: absolute; top: clamp(5rem, 12vh, 7rem); left: var(--pad); z-index: 5;
+    margin: 0; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5;
+    max-width: min(46ch, 52vw); white-space: pre-wrap; overflow-wrap: anywhere;
+    color: color-mix(in oklab, var(--accent) 85%, white);
+    text-shadow: 0 0 10px color-mix(in oklab, var(--accent) 45%, transparent);
+    background: transparent; border: 0; padding: 0;
+  }
+  .p { color: var(--accent-2); }
+  .out { color: var(--text); opacity: .9; }
+  .caret { animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (max-width: 640px) { .term { display: none; } }
+</style>
