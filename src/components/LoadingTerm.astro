@@ -12,7 +12,19 @@ jack.sessions — security researcher
 <span data-out class="out"></span></pre>
 
 <script>
-  import { LOADING } from '../data/loading';
+  // Command list is served from /loading.json (see src/pages/loading.json.ts), not bundled here.
+  type Entry = [string, string];
+  const FALLBACK: Entry[] = [['cat ./hats.txt', 'loading']];
+
+  async function load(): Promise<Entry[]> {
+    try {
+      const res = await fetch('/loading.json');
+      const data = (await res.json()) as Entry[];
+      return data.length ? data : FALLBACK;
+    } catch {
+      return FALLBACK;
+    }
+  }
 
   const cmdEl = document.querySelector<HTMLElement>('[data-cmd]')!;
   const outEl = document.querySelector<HTMLElement>('[data-out]')!;
@@ -20,8 +32,9 @@ jack.sessions — security researcher
   const BAR = 14;
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+  let LOADING: Entry[] = FALLBACK;
   let bag: number[] = [];
-  function next(): [string, string] {
+  function next(): Entry {
     if (!bag.length) {
       bag = LOADING.map((_, i) => i);
       for (let i = bag.length - 1; i > 0; i--) {            // Fisher–Yates
@@ -36,6 +49,8 @@ jack.sessions — security researcher
     const n = Math.round((pct / 100) * BAR);
     return '█'.repeat(n) + '░'.repeat(BAR - n);
   };
+
+  LOADING = await load();
 
   if (reduce) {
     const [cmd, msg] = next();
