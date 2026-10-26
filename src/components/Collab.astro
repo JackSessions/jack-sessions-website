@@ -4,16 +4,16 @@ import { SOCIALS } from '../consts';
 const to = SOCIALS.email.replace('mailto:', '');
 const mail = (subject, body) => `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 const OPTIONS = [
-  { label: 'Research together', cls: 'btn', href: mail('Research collab', "Hi Jack,\n\nI'd like to collaborate on research.\n\nTopic:\nWhat I bring:\nTimeline:\n") },
+  { label: 'Work with me / hire me', cls: 'btn', href: mail('Work enquiry', "Hi Jack,\n\nI'd like to discuss a role or engagement.\n\nOrganisation:\nRole / type of work:\nTimeline:\n") },
   { label: 'Invite me to speak', cls: 'btn btn--alt', href: mail('Speaking invite', "Hi Jack,\n\nI'd like to invite you to speak.\n\nEvent:\nDate:\nFormat:\n") },
-  { label: 'Make music', cls: 'btn btn--ghost', href: mail('Music collab', "Hi Jack,\n\nLet's make something.\n\nWhat I do:\nLinks:\n") },
+  { label: 'Research together', cls: 'btn btn--ghost', href: mail('Research collab', "Hi Jack,\n\nI'd like to collaborate on research.\n\nTopic:\nWhat I bring:\nTimeline:\n") },
   { label: 'Something else', cls: 'btn btn--ghost', href: mail('Hello', 'Hi Jack,\n\n') },
 ];
 ---
 
 <section class="collab" aria-label="Collaborate">
-  <h3>Want to collaborate?</h3>
-  <p>Mobile research, DFIR, a talk, a verse. If it's interesting, I'm in. Pick one and it opens an email.</p>
+  <h3>Want to work together?</h3>
+  <p>Open to security research roles, consulting engagements, and speaking invitations. Mobile, DFIR, aviation/UAV, AI safety. Pick one and it opens an email.</p>
   <div class="collab__cta">
     {OPTIONS.map((o) => <a class={o.cls} href={o.href}>{o.label}</a>)}
   </div>

@@ -54,9 +54,9 @@ const photo = '/hero.jpg';
     <h1 class="sr-only">Jack Sessions</h1>
     <p class="hero__type" data-type aria-live="off">I break things, write up how, and talk about it — DFIR and vulnerability research by day, talks, video, and music the rest of the time.</p>
     <div class="hero__cta">
-      <a class="btn" href="/blog">Read the blog</a>
-      <a class="btn btn--alt" href="/videos">Watch on YouTube</a>
-      <a class="btn btn--ghost" href="/projects">See the work</a>
+      <a class="btn" href="/resume">View resume</a>
+      <a class="btn btn--alt" href="/blog">Read the blog</a>
+      <a class="btn btn--ghost" href="/research">Research</a>
     </div>
   </div>
 </section>
@@ -65,10 +65,10 @@ const photo = '/hero.jpg';
   // Typewriter: types a line, holds, deletes, types the next.
   const el = document.querySelector('[data-type]');
   const LINES = [
-    'Current Computer Science student at UNSW.',
-    'I break things, write up how, and talk about it — DFIR and vulnerability research by day, talks, video, and music the rest of the time.',
-    'Security researcher. Mobile forensics, anti-forensics and counterintelligence.',
-    'Bounty hunter. Conference speaker. Rapper.',
+    'Open to security research and DFIR roles in Australia and internationally.',
+    'GCFA. CVE author. UN WSIS speaker. CeylonCon ambassador. 22 years old.',
+    'DFIR, mobile, UAV and vulnerability research. Boeing 787, Singpass, GrapheneOS.',
+    'Four tools on PyPI. Spoke at the UN at 22. Currently building the next thing.',
   ];
   if (el && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
     let li = 0, ci = 0, deleting = false;
