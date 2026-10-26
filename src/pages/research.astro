@@ -13,6 +13,29 @@ const DISCLOSURES = [
     severity: 'High',
     status: 'Patched',
     tags: ['Mobile', 'Authentication', 'Android/iOS'],
+    post: '/blog/singpass-deep-link-disclosure/',
+    evidence: {
+      type: 'code',
+      caption: 'Frida trace script confirming unvalidated deep link URI passed to internal components without caller verification.',
+      lang: 'javascript',
+      code: `Java.perform(function() {
+  var DeepLinkActivity = Java.use("sg.ndi.activity.DeepLinkDashBoardActivity");
+
+  DeepLinkActivity.onNewIntent.implementation = function(intent) {
+    console.log("[VDP-TRACE] DeepLinkDashBoardActivity received a new Intent!");
+
+    if (intent !== null) {
+      var dataUri = intent.getData();
+      if (dataUri !== null) {
+        console.log("[VDP-TRACE] UNTRUSTED INPUT DETECTED: " + dataUri.toString());
+        console.log("[VDP-TRACE] WARNING: This string is being passed to internal " +
+                    "components without validation.");
+      }
+    }
+    this.onNewIntent(intent);
+  };
+});`,
+    },
   },
   {
     org: 'Boeing',
@@ -24,7 +47,15 @@ const DISCLOSURES = [
     severity: 'High',
     status: 'Acknowledged',
     tags: ['Aviation', 'Network', 'DO-326A', 'HP ProCurve'],
-    evidence: true,
+    post: '/blog/boeing-787-cabin-network-segmentation-failure/',
+    evidence: {
+      type: 'images',
+      caption: 'WiGLE passive WiFi scans confirming HP ProCurve hardware on both flights, June 2026.',
+      images: [
+        { src: '/research/wigle-tr11-syd-sin.jpg', alt: 'WiGLE scan showing ScootWiFi SSIDs backed by ProCurve Networking by HP on TR11 SYD to SIN', caption: 'TR11 SYD→SIN · 23 June 2026 · BSSIDs 00:24:a8:85:8d range' },
+        { src: '/research/wigle-tr14-sin-syd.jpg', alt: 'WiGLE scan showing Scoot_WiFi SSIDs backed by Hewlett Packard hardware on TR14 SIN to SYD', caption: 'TR14 SIN→SYD · 30 June 2026 · Hewlett Packard + ProCurve confirmed' },
+      ],
+    },
   },
   {
     org: 'GrapheneOS',
@@ -36,6 +67,11 @@ const DISCLOSURES = [
     severity: 'Medium',
     status: 'Disclosed',
     tags: ['Android', 'AOSP', 'Mobile'],
+    evidence: {
+      type: 'text',
+      caption: 'Research scope and methodology.',
+      body: 'Analysis focused on the GrapheneOS hardening surface: SELinux policy gaps, app sandbox escape vectors, and permission model edge cases specific to the GrapheneOS fork versus AOSP. Research conducted on a Pixel device running GrapheneOS. Findings reported directly to the GrapheneOS security team via their published disclosure channel. Technical details withheld pending full remediation confirmation.',
+    },
   },
   {
     org: 'Lotus Cars',
@@ -48,6 +84,16 @@ const DISCLOSURES = [
     status: 'Patched',
     tags: ['Android', 'CVE', 'Automotive'],
     nvd: 'https://nvd.nist.gov/vuln/detail/CVE-2025-50861',
+    evidence: {
+      type: 'code',
+      caption: 'Vulnerable manifest entry — PushDeepLinkActivity exported with no permission gate.',
+      lang: 'xml',
+      code: `<!-- AndroidManifest.xml — Lotus app 1.2.8 -->
+<activity
+  android:name="com.lotus.app.PushDeepLinkActivity"
+  android:exported="true" />
+<!-- No android:permission attribute. Any caller, any URI. -->`,
+    },
   },
   {
     org: 'Lotus Cars',
@@ -60,6 +106,16 @@ const DISCLOSURES = [
     status: 'Patched',
     tags: ['Android', 'CVE', 'Automotive'],
     nvd: 'https://nvd.nist.gov/vuln/detail/CVE-2025-50862',
+    evidence: {
+      type: 'code',
+      caption: 'Vulnerable manifest entry — allowBackup not disabled.',
+      lang: 'xml',
+      code: `<!-- AndroidManifest.xml — Lotus app 1.2.8 -->
+<application
+  android:allowBackup="true"
+  ... >
+<!-- Full app data extractable via: adb backup -apk -nosystem com.lotus.app -->`,
+    },
   },
 ];
 
@@ -70,6 +126,7 @@ const OTHER_RESEARCH = [
     text: 'Research into EMP-generating devices, hardening techniques for embedded systems against electromagnetic pulse attack, and the intersection of physical disruption tools with digital forensics and electronic evidence.',
     tags: ['EMP', 'Hardware', 'Electronic Warfare', 'Anti-Forensics'],
     status: 'Ongoing',
+    detail: 'Focus areas: EMP pulse characteristics and shielding thresholds for embedded systems (Faraday cage construction, TVS diode placement, ferrite core selection); how flash-bang and EMP devices interact with digital evidence preservation in first-responder and DFIR contexts; and whether physical disruption events leave artefacts recoverable under NIST SP 800-101 mobile forensic guidelines. Write-up in progress.',
   },
   {
     area: 'SIGINT Drone Technology',
@@ -77,6 +134,7 @@ const OTHER_RESEARCH = [
     text: 'UAV-mounted signals intelligence: passive RF collection, spectrum analysis from airborne platforms, and the security posture of civilian drone communication links (MAVLink, DJI OcuSync, custom RF stacks).',
     tags: ['UAV', 'SIGINT', 'RF Security', 'Drones'],
     status: 'Ongoing',
+    detail: 'Active work: passive spectrum capture from a small UAV platform (SDR + Raspberry Pi); analysis of MAVLink v2 authentication gaps (unauthenticated heartbeat injection); and DJI OcuSync 2.0 link characterisation. Secondary angle: SIGINT drone detection — what RF signatures a passive collector leaves, and whether standard IDS tooling (Kismet, rtl_433) catches it at range. Write-up in progress.',
   },
   {
     area: 'Anti-Forensics Dead Man Switch',
@@ -84,6 +142,7 @@ const OTHER_RESEARCH = [
     text: 'Design and analysis of hardware and software dead man switch systems intended to trigger data destruction or encryption on device seizure. Research covers both implementation (for understanding defensive use cases) and forensic bypass techniques.',
     tags: ['Anti-Forensics', 'DFIR', 'Hardware', 'OpSec'],
     status: 'Ongoing',
+    detail: 'Research covers three implementation classes: (1) USB kill-switch dongles that trigger LUKS key wipe on removal; (2) network heartbeat systems that encrypt or destroy data if a keepalive beacon stops; (3) hardware tamper sensors (accelerometer/light sensor triggered). Forensic bypass research focuses on imaging before the switch fires — power analysis, cold-boot attacks, and write-blocker strategies. Both offensive and defensive analysis; no exploitation of live systems.',
   },
   {
     area: 'IoT Security: Smart Fridge',
@@ -91,6 +150,7 @@ const OTHER_RESEARCH = [
     text: 'Vulnerability research on networked consumer appliances: attack surface mapping, firmware extraction, exposed network services, and weak authentication patterns in smart home devices.',
     tags: ['IoT', 'Embedded', 'Firmware', 'Consumer'],
     status: 'Ongoing',
+    detail: 'Target: a networked smart fridge with a companion Android app and cloud API. Attack surface: firmware (binwalk extraction, hardcoded credentials check), exposed local network services (nmap, Shodan for similar models), companion app (manifest-trace, Frida), and cloud API (Burp, auth token analysis). Goal: a full attack chain from LAN access to account takeover or data exposure. Vendor notified if anything material is found before publication.',
   },
   {
     area: 'Sony PSP Exploitation',
@@ -98,6 +158,7 @@ const OTHER_RESEARCH = [
     text: 'Exploitation research on the Sony PlayStation Portable: bootloader vulnerabilities, custom firmware analysis, Memory Stick attack surfaces, and using retro hardware as a platform for learning kernel-level exploitation primitives.',
     tags: ['PSP', 'Embedded', 'Retro', 'Kernel'],
     status: 'Ongoing',
+    detail: 'The PSP is a contained MIPS platform with well-documented but historically under-explained exploits. Research goals: reproduce the original HEN/CFW exploit chains from first principles (no patched binaries), understand the Memory Stick format parser attack surface, and use the PSP as a clean environment for practising kernel heap and stack exploitation without the noise of modern mitigations (ASLR, NX, CFI). Write-up aimed at other researchers wanting a hardware exploitation primer.',
   },
 ];
 
@@ -154,19 +215,30 @@ const SEVERITY_COLOR: Record<string, string> = {
               <details class="disc__evidence">
                 <summary class="disc__evidence-toggle">View evidence</summary>
                 <div class="disc__evidence-body">
-                  <p class="disc__evidence-caption">WiGLE passive WiFi scans confirming HP ProCurve hardware on both flights, June 2026.</p>
-                  <div class="disc__evidence-grid">
-                    <figure class="evidence-fig">
-                      <img src="/research/wigle-tr11-syd-sin.jpg" alt="WiGLE scan showing ScootWiFi SSIDs backed by ProCurve Networking by HP on TR11 SYD to SIN" loading="lazy" />
-                      <figcaption>TR11 SYD→SIN · 23 June 2026 · BSSIDs 00:24:a8:85:8d range</figcaption>
-                    </figure>
-                    <figure class="evidence-fig">
-                      <img src="/research/wigle-tr14-sin-syd.jpg" alt="WiGLE scan showing Scoot_WiFi SSIDs backed by Hewlett Packard hardware on TR14 SIN to SYD" loading="lazy" />
-                      <figcaption>TR14 SIN→SYD · 30 June 2026 · Hewlett Packard + ProCurve confirmed</figcaption>
-                    </figure>
-                  </div>
+                  <p class="disc__evidence-caption">{d.evidence.caption}</p>
+                  {d.evidence.type === 'images' && (
+                    <div class="disc__evidence-grid">
+                      {d.evidence.images.map((img: any) => (
+                        <figure class="evidence-fig">
+                          <img src={img.src} alt={img.alt} loading="lazy" />
+                          <figcaption>{img.caption}</figcaption>
+                        </figure>
+                      ))}
+                    </div>
+                  )}
+                  {d.evidence.type === 'code' && (
+                    <pre class="disc__evidence-code"><code>{d.evidence.code}</code></pre>
+                  )}
+                  {d.evidence.type === 'text' && (
+                    <p class="disc__evidence-body-text">{d.evidence.body}</p>
+                  )}
                 </div>
               </details>
+            )}
+            {d.post && !d.evidence && (
+              <div class="disc__evidence" style="border-top:1px solid var(--line);padding-top:0.5rem;margin-top:0.5rem">
+                <a class="disc__evidence-toggle" style="color:var(--accent);font-family:var(--font-mono);font-size:0.75rem" href={d.post}>Read write-up →</a>
+              </div>
             )}
           </div>
         ))}
@@ -252,6 +324,14 @@ const SEVERITY_COLOR: Record<string, string> = {
             <span class="other-card__domain mono">{r.domain}</span>
             <p class="disc__text">{r.text}</p>
             <div class="tags">{r.tags.map((t) => <span class="tag">{t}</span>)}</div>
+            {r.detail && (
+              <details class="disc__evidence">
+                <summary class="disc__evidence-toggle">More detail</summary>
+                <div class="disc__evidence-body">
+                  <p class="disc__evidence-body-text">{r.detail}</p>
+                </div>
+              </details>
+            )}
           </div>
         ))}
       </div>
@@ -311,6 +391,8 @@ const SEVERITY_COLOR: Record<string, string> = {
   .evidence-fig { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
   .evidence-fig img { width: 100%; display: block; border-bottom: 1px solid var(--line); }
   .evidence-fig figcaption { padding: 0.5rem 0.75rem; font-size: 0.8rem; color: var(--muted); font-family: var(--font-mono); }
+  .disc__evidence-code { background: #0d1117; border: 1px solid var(--line); border-radius: var(--radius); padding: 0.9rem 1rem; overflow-x: auto; font-size: 0.78rem; line-height: 1.6; color: #e6edf3; font-family: var(--font-mono); white-space: pre; margin: 0; }
+  .disc__evidence-body-text { font-size: 0.85rem; color: var(--muted); line-height: 1.65; margin: 0; }
   .other-grid { display: grid; gap: 0.75rem; margin-bottom: 0.5rem; }
   @media (min-width: 52rem) { .other-grid { grid-template-columns: 1fr 1fr; } }
   .other-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.2rem; display: grid; gap: 0.3rem; }
