@@ -15,7 +15,6 @@ export const NAV = [
   { href: '/videos',    label: 'Videos' },
   { href: '/music',     label: 'Music' },
   { href: '/about',     label: 'About' },
-  { href: '/resume',    label: 'Resume' },
 ] as const;
 
 // Footer + hero social links. Delete any you don't use.

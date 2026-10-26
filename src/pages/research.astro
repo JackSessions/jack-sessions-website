@@ -15,10 +15,13 @@ const DISCLOSURES = [
     tags: ['Mobile', 'Authentication', 'Android/iOS'],
     post: '/blog/singpass-deep-link-disclosure/',
     evidence: {
-      type: 'code',
-      caption: 'Frida trace script confirming unvalidated deep link URI passed to internal components without caller verification.',
-      lang: 'javascript',
-      code: `Java.perform(function() {
+      type: 'multi',
+      caption: 'Frida trace script and logcat confirming unvalidated deep link URI on sg.ndi.sp v26.1.1.',
+      blocks: [
+        {
+          label: 'frida-trace.js',
+          lang: 'javascript',
+          code: `Java.perform(function() {
   var DeepLinkActivity = Java.use("sg.ndi.activity.DeepLinkDashBoardActivity");
 
   DeepLinkActivity.onNewIntent.implementation = function(intent) {
@@ -35,6 +38,19 @@ const DISCLOSURES = [
     this.onNewIntent(intent);
   };
 });`,
+        },
+        {
+          label: 'logcat — dex2oat confirming target binary',
+          lang: 'text',
+          code: `08-05 19:53:23.700  F DEBUG   : Cmdline: /apex/com.android.art/bin/dex2oat32
+  --zip-location=.../sg.ndi.sp-w5miu1jf_g6hQR2y2xwZyg==/base.apk
+  --comments=app-name:sg.ndi.sp,app-version-name:26.1.1,app-version-code:200
+  ...
+[VDP-TRACE] DeepLinkDashBoardActivity received a new Intent!
+[VDP-TRACE] UNTRUSTED INPUT DETECTED: singpass://dashboard?redirect=...
+[VDP-TRACE] WARNING: This string is being passed to internal components without validation.`,
+        },
+      ],
     },
   },
   {
@@ -211,30 +227,39 @@ const SEVERITY_COLOR: Record<string, string> = {
               {d.nvd && <a class="tag link" href={d.nvd} target="_blank" rel="noopener">NVD ↗</a>}
               {d.org === 'Boeing' && <a class="tag link" href="/blog/boeing-787-cabin-network-segmentation-failure/">Write-up ↗</a>}
             </div>
-            {d.evidence && (
-              <details class="disc__evidence">
-                <summary class="disc__evidence-toggle">View evidence</summary>
-                <div class="disc__evidence-body">
-                  <p class="disc__evidence-caption">{d.evidence.caption}</p>
-                  {d.evidence.type === 'images' && (
-                    <div class="disc__evidence-grid">
-                      {d.evidence.images.map((img: any) => (
-                        <figure class="evidence-fig">
-                          <img src={img.src} alt={img.alt} loading="lazy" />
-                          <figcaption>{img.caption}</figcaption>
-                        </figure>
-                      ))}
-                    </div>
-                  )}
-                  {d.evidence.type === 'code' && (
-                    <pre class="disc__evidence-code"><code>{d.evidence.code}</code></pre>
-                  )}
-                  {d.evidence.type === 'text' && (
-                    <p class="disc__evidence-body-text">{d.evidence.body}</p>
-                  )}
-                </div>
-              </details>
-            )}
+            {d.evidence && (() => {
+              const ev = d.evidence as any;
+              return (
+                <details class="disc__evidence">
+                  <summary class="disc__evidence-toggle">View evidence</summary>
+                  <div class="disc__evidence-body">
+                    <p class="disc__evidence-caption">{ev.caption}</p>
+                    {ev.type === 'images' && (
+                      <div class="disc__evidence-grid">
+                        {ev.images.map((img: any) => (
+                          <figure class="evidence-fig">
+                            <img src={img.src} alt={img.alt} loading="lazy" />
+                            <figcaption>{img.caption}</figcaption>
+                          </figure>
+                        ))}
+                      </div>
+                    )}
+                    {ev.type === 'code' && (
+                      <pre class="disc__evidence-code"><code>{ev.code}</code></pre>
+                    )}
+                    {ev.type === 'multi' && ev.blocks.map((b: any) => (
+                      <div class="disc__evidence-block">
+                        <span class="disc__evidence-label">{b.label}</span>
+                        <pre class="disc__evidence-code"><code>{b.code}</code></pre>
+                      </div>
+                    ))}
+                    {ev.type === 'text' && (
+                      <p class="disc__evidence-body-text">{ev.body}</p>
+                    )}
+                  </div>
+                </details>
+              );
+            })()}
             {d.post && !d.evidence && (
               <div class="disc__evidence" style="border-top:1px solid var(--line);padding-top:0.5rem;margin-top:0.5rem">
                 <a class="disc__evidence-toggle" style="color:var(--accent);font-family:var(--font-mono);font-size:0.75rem" href={d.post}>Read write-up →</a>
@@ -391,6 +416,9 @@ const SEVERITY_COLOR: Record<string, string> = {
   .evidence-fig { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
   .evidence-fig img { width: 100%; display: block; border-bottom: 1px solid var(--line); }
   .evidence-fig figcaption { padding: 0.5rem 0.75rem; font-size: 0.8rem; color: var(--muted); font-family: var(--font-mono); }
+  .disc__evidence-block { display: grid; gap: 0.3rem; margin-bottom: 0.75rem; }
+  .disc__evidence-block:last-child { margin-bottom: 0; }
+  .disc__evidence-label { font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); }
   .disc__evidence-code { background: #0d1117; border: 1px solid var(--line); border-radius: var(--radius); padding: 0.9rem 1rem; overflow-x: auto; font-size: 0.78rem; line-height: 1.6; color: #e6edf3; font-family: var(--font-mono); white-space: pre; margin: 0; }
   .disc__evidence-body-text { font-size: 0.85rem; color: var(--muted); line-height: 1.65; margin: 0; }
   .other-grid { display: grid; gap: 0.75rem; margin-bottom: 0.5rem; }
