@@ -19,7 +19,7 @@ const DISCLOSURES = [
     logo: null,
     country: 'USA · Aerospace & Defence',
     id: 'Responsible disclosure · DO-326A/ED-12C',
-    title: 'Boeing 787 cabin network segmentation failure — HP ProCurve, Scoot Airlines TR11/TR14',
+    title: 'Boeing 787 cabin network segmentation failure: HP ProCurve, Scoot Airlines TR11/TR14',
     text: 'Confirmed network segmentation failure on two Scoot Airlines 787 flights (TR11 SYD→SIN and TR14 SIN→SYD, June 2026): ICMP echo requests from the passenger WiFi received replies from internal aircraft IP addresses, violating DO-326A/ED-12C airworthiness security isolation requirements. HP ProCurve hardware confirmed via WiGLE passive scanning (BSSIDs 00:24:a8:xx:xx:xx). Theoretical attack surface includes lateral movement to operational networks (est. CVSS 9.5) and cross-domain protocol injection into ARINC 429/AFDX (est. CVSS 10.0). No exploitation attempted. Disclosed to Boeing PSIRT, FAA, CAAS Singapore, SingCERT, CERT/CC and ASD.',
     severity: 'High',
     status: 'Acknowledged',
@@ -42,7 +42,7 @@ const DISCLOSURES = [
     logo: null,
     country: 'UK · Automotive',
     id: 'CVE-2025-50861',
-    title: 'Exported deep-link activity — Lotus Android app 1.2.8',
+    title: 'Exported deep-link activity: Lotus Android app 1.2.8',
     text: 'PushDeepLinkActivity is exported and reachable without authentication via ADB or a malicious app, risking denial of service or logic abuse.',
     severity: 'Medium',
     status: 'Patched',
@@ -54,12 +54,50 @@ const DISCLOSURES = [
     logo: null,
     country: 'UK · Automotive',
     id: 'CVE-2025-50862',
-    title: 'ADB backup data exposure — Lotus Android app 1.2.8',
+    title: 'ADB backup data exposure: Lotus Android app 1.2.8',
     text: 'allowBackup=true in the manifest allows full user data to be extracted over ADB backup on rooted or debug-enabled devices.',
     severity: 'Medium',
     status: 'Patched',
     tags: ['Android', 'CVE', 'Automotive'],
     nvd: 'https://nvd.nist.gov/vuln/detail/CVE-2025-50862',
+  },
+];
+
+const OTHER_RESEARCH = [
+  {
+    area: 'EMP & Flashbang Countermeasures',
+    domain: 'Hardware Security · Electronic Warfare',
+    text: 'Research into EMP-generating devices, hardening techniques for embedded systems against electromagnetic pulse attack, and the intersection of physical disruption tools with digital forensics and electronic evidence.',
+    tags: ['EMP', 'Hardware', 'Electronic Warfare', 'Anti-Forensics'],
+    status: 'Ongoing',
+  },
+  {
+    area: 'SIGINT Drone Technology',
+    domain: 'UAV · Signals Intelligence',
+    text: 'UAV-mounted signals intelligence: passive RF collection, spectrum analysis from airborne platforms, and the security posture of civilian drone communication links (MAVLink, DJI OcuSync, custom RF stacks).',
+    tags: ['UAV', 'SIGINT', 'RF Security', 'Drones'],
+    status: 'Ongoing',
+  },
+  {
+    area: 'Anti-Forensics Dead Man Switch',
+    domain: 'Anti-Forensics · Operational Security',
+    text: 'Design and analysis of hardware and software dead man switch systems intended to trigger data destruction or encryption on device seizure. Research covers both implementation (for understanding defensive use cases) and forensic bypass techniques.',
+    tags: ['Anti-Forensics', 'DFIR', 'Hardware', 'OpSec'],
+    status: 'Ongoing',
+  },
+  {
+    area: 'IoT Security: Smart Fridge',
+    domain: 'IoT · Embedded · Consumer Devices',
+    text: 'Vulnerability research on networked consumer appliances: attack surface mapping, firmware extraction, exposed network services, and weak authentication patterns in smart home devices.',
+    tags: ['IoT', 'Embedded', 'Firmware', 'Consumer'],
+    status: 'Ongoing',
+  },
+  {
+    area: 'Sony PSP Exploitation',
+    domain: 'Retro Hardware · Embedded Exploitation',
+    text: 'Exploitation research on the Sony PlayStation Portable: bootloader vulnerabilities, custom firmware analysis, Memory Stick attack surfaces, and using retro hardware as a platform for learning kernel-level exploitation primitives.',
+    tags: ['PSP', 'Embedded', 'Retro', 'Kernel'],
+    status: 'Ongoing',
   },
 ];
 
@@ -110,6 +148,7 @@ const SEVERITY_COLOR: Record<string, string> = {
             <div class="tags">
               {d.tags.map((t) => <span class="tag">{t}</span>)}
               {d.nvd && <a class="tag link" href={d.nvd} target="_blank" rel="noopener">NVD ↗</a>}
+              {d.org === 'Boeing' && <a class="tag link" href="/blog/boeing-787-cabin-network-segmentation-failure/">Write-up ↗</a>}
             </div>
           </div>
         ))}
@@ -181,7 +220,7 @@ const SEVERITY_COLOR: Record<string, string> = {
         </a>
         <a class="tool" href="/blog/phantomtrace-checking-whether-ntfs-agrees-with-itself/">
           <span class="tool__name">PhantomTrace</span>
-          <span class="tool__desc">Read-only NTFS integrity checker — MFT vs cluster bitmap vs run lists</span>
+          <span class="tool__desc">Read-only NTFS integrity checker: MFT vs cluster bitmap vs run lists</span>
           <code class="tool__install">pipx install phantom-trace-ntfs</code>
         </a>
         <a class="tool" href="https://pypi.org/project/manifest-trace/" target="_blank" rel="noopener">
@@ -194,6 +233,24 @@ const SEVERITY_COLOR: Record<string, string> = {
           <span class="tool__desc">eBPF-based Linux runtime checker for process hiding and fileless execution</span>
           <code class="tool__install">pip install runtime-trace</code>
         </a>
+      </div>
+
+      <div class="section-head" style="margin-top:3rem">
+        <h2>Other Research</h2><span class="rule"></span>
+      </div>
+      <p class="lead">Ongoing and forthcoming research areas. Write-ups in progress.</p>
+      <div class="other-grid">
+        {OTHER_RESEARCH.map((r) => (
+          <div class="other-card">
+            <div class="other-card__head">
+              <strong class="other-card__area">{r.area}</strong>
+              <span class="badge badge--status">{r.status}</span>
+            </div>
+            <span class="other-card__domain mono">{r.domain}</span>
+            <p class="disc__text">{r.text}</p>
+            <div class="tags">{r.tags.map((t) => <span class="tag">{t}</span>)}</div>
+          </div>
+        ))}
       </div>
 
       <div class="section-head" style="margin-top:3rem">
@@ -244,6 +301,13 @@ const SEVERITY_COLOR: Record<string, string> = {
   .evidence-fig { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
   .evidence-fig img { width: 100%; display: block; border-bottom: 1px solid var(--line); }
   .evidence-fig figcaption { padding: 0.5rem 0.75rem; font-size: 0.8rem; color: var(--muted); font-family: var(--font-mono); }
+  .other-grid { display: grid; gap: 0.75rem; margin-bottom: 0.5rem; }
+  @media (min-width: 52rem) { .other-grid { grid-template-columns: 1fr 1fr; } }
+  .other-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.2rem; display: grid; gap: 0.3rem; }
+  .other-card:hover { border-color: var(--accent); }
+  .other-card__head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .other-card__area { font-size: 0.97rem; }
+  .other-card__domain { font-size: 0.72rem; color: var(--accent); }
   .tool-list { display: grid; gap: 0.75rem; }
   .tool { display: grid; grid-template-columns: 10rem 1fr auto; gap: 0.5rem 1.25rem; align-items: center; padding: 0.9rem 1.1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); color: inherit; text-decoration: none; }
   .tool:hover { border-color: var(--accent); }
