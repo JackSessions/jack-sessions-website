@@ -12,9 +12,9 @@ Most conversations about WAFs treat them as a monolithic thing you bolt onto a n
 The OSI model gives each layer a specific job. A firewall operating at Layer 3 sees IP packets. One at Layer 4 sees TCP/UDP segments. At Layer 5, you see sessions: connection establishment, TLS handshakes, and transport-level state. At Layer 7, you see the actual HTTP request, including its method, path, headers, cookies, and body. That difference in vantage point is not cosmetic.
 
 ```
-OSI Model — WAF Inspection Points
+OSI Model: WAF Inspection Points
 
-L7  Application  │ HTTP/HTTPS, GraphQL, WebSockets — full request payload visible   │ ← L7 WAF
+L7  Application  │ HTTP/HTTPS, GraphQL, WebSockets: full request payload visible   │ ← L7 WAF
 L6  Presentation │ TLS encryption/decryption, encoding negotiation                  │   TLS offload
 L5  Session      │ Connection state, session tokens, TLS handshake, SYN patterns    │ ← Session FW
 L4  Transport    │ TCP/UDP ports, segment reassembly, rate limiting                 │   NGFW / ACL
@@ -28,7 +28,7 @@ Session-layer firewalls work before HTTP ever gets parsed. They track whether a 
 This makes them very effective against volumetric attacks and connection-state exhaustion. A SYN flood, a TLS fingerprint anomaly, or a slow-open attack is detectable here without touching application logic. A SQL injection string inside a POST body is invisible.
 
 ```
-# Session-layer firewall log — connection events
+# Session-layer firewall log: connection events
 
 2026-10-26T04:31:12Z  CONN  203.0.113.44:52111  →  10.0.0.1:443  SYN  ALLOW
 2026-10-26T04:31:12Z  CONN  203.0.113.44:52112  →  10.0.0.1:443  SYN  ALLOW
@@ -48,7 +48,7 @@ A Layer 7 WAF terminates TLS, reassembles TCP streams, and reads the full HTTP r
 The trade-off is computational cost and latency. Deep packet inspection at L7 is orders of magnitude more expensive per connection than a session-state table lookup. A volumetric DDoS carrying millions of connections per second will exhaust a cloud WAF's inspection budget long before it reaches rules that check for SQLi patterns.
 
 ```
-# L7 WAF log — HTTP inspection events
+# L7 WAF log: HTTP inspection events
 
 2026-10-26T04:31:58Z  BLOCK  198.51.100.7
   method  POST

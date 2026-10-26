@@ -18,12 +18,13 @@ const DISCLOSURES = [
     org: 'Boeing',
     logo: null,
     country: 'USA · Aerospace & Defence',
-    id: 'Responsible disclosure',
-    title: 'Vulnerability disclosure via Boeing Bug Bounty Program',
-    text: 'Security finding reported through Boeing\'s coordinated vulnerability disclosure programme. Acknowledged by Boeing security team.',
-    severity: 'Medium',
+    id: 'Responsible disclosure · DO-326A/ED-12C',
+    title: 'Boeing 787 cabin network segmentation failure — HP ProCurve, Scoot Airlines TR11/TR14',
+    text: 'Confirmed network segmentation failure on two Scoot Airlines 787 flights (TR11 SYD→SIN and TR14 SIN→SYD, June 2026): ICMP echo requests from the passenger WiFi received replies from internal aircraft IP addresses, violating DO-326A/ED-12C airworthiness security isolation requirements. HP ProCurve hardware confirmed via WiGLE passive scanning (BSSIDs 00:24:a8:xx:xx:xx). Theoretical attack surface includes lateral movement to operational networks (est. CVSS 9.5) and cross-domain protocol injection into ARINC 429/AFDX (est. CVSS 10.0). No exploitation attempted. Disclosed to Boeing PSIRT, FAA, CAAS Singapore, SingCERT, CERT/CC and ASD.',
+    severity: 'High',
     status: 'Acknowledged',
-    tags: ['Web', 'Bug Bounty'],
+    tags: ['Aviation', 'Network', 'DO-326A', 'HP ProCurve'],
+    evidence: true,
   },
   {
     org: 'GrapheneOS',
@@ -114,14 +115,29 @@ const SEVERITY_COLOR: Record<string, string> = {
         ))}
       </div>
 
+      <div class="section-head" style="margin-top:2.5rem">
+        <h2>Evidence</h2><span class="rule"></span>
+      </div>
+      <p class="lead">WiGLE passive WiFi scans confirming HP ProCurve hardware on two Scoot Airlines Boeing 787 flights, June 2026.</p>
+      <div class="evidence-grid">
+        <figure class="evidence-fig">
+          <img src="/research/wigle-tr11-syd-sin.jpg" alt="WiGLE WiFi scan showing ScootWiFi SSIDs backed by ProCurve Networking by HP hardware (BSSIDs 00:24:a8:85:8d:*) on Scoot flight TR11 SYD to SIN" loading="lazy" />
+          <figcaption>TR11 SYD→SIN · 23 June 2026 · multiple ProCurve Networking by HP BSSIDs in 00:24:a8:85:8d range</figcaption>
+        </figure>
+        <figure class="evidence-fig">
+          <img src="/research/wigle-tr14-sin-syd.jpg" alt="WiGLE WiFi scan showing Scoot_WiFi SSIDs backed by ProCurve Networking by HP and Hewlett Packard hardware on Scoot flight TR14 SIN to SYD" loading="lazy" />
+          <figcaption>TR14 SIN→SYD · 30 June 2026 · Hewlett Packard and ProCurve Networking by HP confirmed</figcaption>
+        </figure>
+      </div>
+
       <div class="testimonials">
         <blockquote class="testimonial">
           <p>"After everything there was the after party where I was able to meet and chat with some super sick people especially <strong>Jack Sessions</strong> (he pwned Singpass btw). Bro is literally the embodiment of 'living on the edge' whilst being the sickest person ever."</p>
-          <cite>— Koh Tom Han, Wannabe Vulnerability Researcher · SinCon 2026</cite>
+          <cite>Koh Tom Han, Wannabe Vulnerability Researcher · SinCon 2026</cite>
         </blockquote>
         <blockquote class="testimonial">
           <p>"What an asset to have on any ticket! Nice work CeylonCon!"</p>
-          <cite>— Victor Hanna, Director &amp; Chief Hacking Officer · Exploit Security · on the CeylonCon Ambassador announcement</cite>
+          <cite>Victor Hanna, Director &amp; Chief Hacking Officer · Exploit Security · on the CeylonCon Ambassador announcement</cite>
         </blockquote>
       </div>
 
@@ -142,7 +158,7 @@ const SEVERITY_COLOR: Record<string, string> = {
             "Integrity and character are the only metrics that outlast every other measure of success in cybersecurity."
           </blockquote>
           <p class="ambassador-card__bio">
-            CeylonCon is Sri Lanka's annual community-driven technology conference, run by the Ceylon Computer Foundation. Jack was announced as the Australian ambassador — representing the CeylonCon community across Australia and the Sri Lankan diaspora, and connecting the security research communities of both countries.
+            CeylonCon is Sri Lanka's annual community-driven technology conference, run by the Ceylon Computer Foundation. Jack was announced as the Australian ambassador: representing the CeylonCon community across Australia and the Sri Lankan diaspora, and connecting the security research communities of both countries.
           </p>
           <div class="tags" style="margin-top:0.75rem">
             <span class="tag">CeylonCon</span>
@@ -223,6 +239,11 @@ const SEVERITY_COLOR: Record<string, string> = {
   .ambassador-card__role { color: var(--muted); font-size: 0.9rem; margin: 0; }
   .ambassador-card__quote { border-left: 3px solid var(--accent); margin: 0.5rem 0; padding: 0.5rem 1rem; color: var(--muted); font-style: italic; font-size: 0.95rem; }
   .ambassador-card__bio { color: var(--muted); font-size: 0.88rem; line-height: 1.65; margin: 0; }
+  .evidence-grid { display: grid; gap: 1rem; margin-bottom: 2rem; }
+  @media (min-width: 52rem) { .evidence-grid { grid-template-columns: 1fr 1fr; } }
+  .evidence-fig { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .evidence-fig img { width: 100%; display: block; border-bottom: 1px solid var(--line); }
+  .evidence-fig figcaption { padding: 0.5rem 0.75rem; font-size: 0.8rem; color: var(--muted); font-family: var(--font-mono); }
   .tool-list { display: grid; gap: 0.75rem; }
   .tool { display: grid; grid-template-columns: 10rem 1fr auto; gap: 0.5rem 1.25rem; align-items: center; padding: 0.9rem 1.1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); color: inherit; text-decoration: none; }
   .tool:hover { border-color: var(--accent); }

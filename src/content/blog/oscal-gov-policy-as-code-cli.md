@@ -35,12 +35,12 @@ oscal-gov v2.4.1
 
 The tool covers the frameworks that actually come up in Australian financial services and federal government contexts, with full OSCAL catalog and profile mappings for each.
 
-- **APRA CPS 234** — full self-assessment flow, notification gap detection
-- **ASD Essential Eight** — maturity level scoring, ML0-ML3 mapping
-- **ISO 27001:2022** — Annex A control mapping, statement of applicability generation
-- **NIST CSF 2.0** — function/category/subcategory full coverage
-- **FedRAMP Rev5** — US federal authorisation package support
-- **ISM (ACSC)** — Australian Government Information Security Manual controls
+- **APRA CPS 234**: full self-assessment flow, notification gap detection
+- **ASD Essential Eight**: maturity level scoring, ML0-ML3 mapping
+- **ISO 27001:2022**: Annex A control mapping, statement of applicability generation
+- **NIST CSF 2.0**: function/category/subcategory full coverage
+- **FedRAMP Rev5**: US federal authorisation package support
+- **ISM (ACSC)**: Australian Government Information Security Manual controls
 
 Each framework ships as an OSCAL catalog with resolved profiles, so you can map your component definitions against multiple frameworks simultaneously and see cross-framework coverage without re-entering data.
 
@@ -49,7 +49,7 @@ Each framework ships as an OSCAL catalog with resolved profiles, so you can map 
 ```bash
 $ oscal-gov gap-analysis run --framework apra-cps234 --format table
 
-Gap Analysis — APRA CPS 234  2026-10-26T04:15:00Z
+Gap Analysis: APRA CPS 234  2026-10-26T04:15:00Z
 
   COVERED (28/37)
   ┌──────────────┬──────────────────────────────────┬─────────────┐
@@ -87,13 +87,13 @@ The 111 commands cover six major areas. Most are composable: pipe a gap analysis
 
 ## Integrations
 
-**MCP Server** — exposes the full command surface as Model Context Protocol tools, so any MCP-capable AI assistant can run gap analyses and query OSCAL state on your behalf.
+**MCP Server**: exposes the full command surface as Model Context Protocol tools, so any MCP-capable AI assistant can run gap analyses and query OSCAL state on your behalf.
 
-**VS Code + Vim plugins** — OSCAL schema validation, control ID autocomplete, and inline gap warnings directly in your editor. The LSP server powers both plugins from a single binary.
+**VS Code + Vim plugins**: OSCAL schema validation, control ID autocomplete, and inline gap warnings directly in your editor. The LSP server powers both plugins from a single binary.
 
-**Terraform provider** — manage OSCAL documents as Terraform resources. Infrastructure changes and compliance changes live in the same PR and plan together.
+**Terraform provider**: manage OSCAL documents as Terraform resources. Infrastructure changes and compliance changes live in the same PR and plan together.
 
-**Bitbucket Pipelines** — drop-in pipe that runs gap analysis on every PR and comments with a coverage diff. Requires zero configuration beyond the framework name.
+**Bitbucket Pipelines**: drop-in pipe that runs gap analysis on every PR and comments with a coverage diff. Requires zero configuration beyond the framework name.
 
 ## The FAIR Risk Layer
 
