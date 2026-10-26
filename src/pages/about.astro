@@ -77,7 +77,7 @@ const FOCUS = [
         {TOOLS.map((t) => (
           <div class="card">
             <span class="meta">on PyPI</span>
-            <h3><a href={t.post}>{t.t}</a></h3>
+            <h3>{t.post ? <a href={t.post}>{t.t}</a> : t.t}</h3>
             <p>{t.d}</p>
             <code class="install">{t.install}</code>
             <div class="tags">

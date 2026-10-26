@@ -1,0 +1,241 @@
+---
+import Page from '../layouts/Page.astro';
+---
+
+<Page title="Resume — Jack Sessions" description="CV and resume for Jack Sessions: security researcher, DFIR specialist, CVE author and mobile security consultant.">
+  <section class="section">
+    <div class="wrap cv">
+
+      <div class="cv__actions no-print">
+        <button class="btn btn--ghost" onclick="window.print()">Download / Print PDF</button>
+        <a class="btn btn--ghost" href="/">← Back to site</a>
+      </div>
+
+      <div class="cv__doc">
+        <header class="cv__head">
+          <h1>Jack Sessions</h1>
+          <div class="cv__links">
+            <a href="mailto:JackSessions@protonmail.com">JackSessions@protonmail.com</a>
+            <span>·</span>
+            <a href="https://linkedin.com/in/jacksessions" target="_blank" rel="noopener">linkedin.com/in/jacksessions</a>
+            <span>·</span>
+            <a href="https://github.com/JackSessions" target="_blank" rel="noopener">github.com/JackSessions</a>
+            <span>·</span>
+            <a href="https://jacksessions.dev" target="_blank" rel="noopener">jacksessions.dev</a>
+          </div>
+          <p class="cv__summary">
+            GCFA certified security researcher and DFIR specialist since 2020, across vulnerability discovery, digital forensics, and adversary tradecraft analysis.
+            Published CVE holder (CVE-2025-50861/62) and named inventor on 4 pending export-controlled patents in mobile exploitation, silicon-level anti-forensics,
+            and EMP hardening. Creator of four open-source security tools on PyPI. Research spans Windows, Linux, mobile forensics, aviation/space network security,
+            GrapheneOS kernel internals, and DPRK counterintelligence tradecraft. Technical Evangelist &amp; Cybersecurity Rapper: producing educational content on low-level
+            forensics and mobile security via YouTube &amp; Sony Music Group. <strong>TL;DR: Full Stack Security Researcher and DJ.</strong>
+          </p>
+        </header>
+
+        <section class="cv__section">
+          <h2>Security Research</h2>
+          <div class="cv__role">
+            <div class="cv__role-head">
+              <strong>Security Researcher and Inventor</strong>
+              <span class="cv__location">Sydney, NSW / San Francisco, USA</span>
+              <span class="cv__date">Jan 2020 – Present</span>
+            </div>
+            <ul>
+              <li>Published <strong>CVE-2025-50861</strong> and <strong>CVE-2025-50862</strong> (MITRE assigned): incorrect access control via an unprotected exported Android activity, and insecure backup via <code>allowBackup=true</code>, in the Lotus Cars Android app v1.2.8. Disclosed under ISO/IEC 29147.</li>
+              <li>Disclosed fleet-wide network segmentation weaknesses in the Boeing 787 cabin network architecture (HP ProCurve) to Boeing PSIRT, the FAA, CERT/CC, CAAS Singapore and SingCERT, July 2026; scope and ethical boundaries documented against DO-326A/ED-202A.</li>
+              <li>Named inventor on four pending patents in dual-use cybersecurity: mobile exploitation tooling, silicon-level anti-forensic materials and EMP hardening devices. Initiated coordinated disclosure of a GrapheneOS kernel memory-management issue, July 2025.</li>
+              <li>Built PHANTOM TRACE (<a href="https://github.com/JackSessions/PhantomTrace" target="_blank" rel="noopener">github.com/JackSessions/PhantomTrace</a>), an open-source cross-layer consistency validator in Python detecting anti-forensic MFT and $Bitmap manipulation on NTFS.</li>
+              <li>Operate a five-node Proxmox cluster (60 vCPU, 250 GB RAM) for detonation, imaging and detection engineering content.</li>
+              <li>Presented at BSides Tokyo 2026, Sydney, Canberra, the UN WSIS Forum, HVCK THE HILLS, and AVTOKYO 2026; delivered "Counterintelligence in the Age of JucheNet" at BSides Pyongyang 2025.</li>
+              <li>Producing DFIR and mobile security education on FreeCodeCamp.com for November 2026.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="cv__section">
+          <h2>Open-Source Tools</h2>
+          <div class="cv__tools-grid">
+            <div class="cv__tool">
+              <strong>hayabusa-lens</strong>
+              <span class="cv__tool-install">pipx install hayabusa-lens</span>
+              <span>Dashboard for Hayabusa/Chainsaw with 3D attack map and AI investigator.</span>
+            </div>
+            <div class="cv__tool">
+              <strong>phantom-trace-ntfs</strong>
+              <span class="cv__tool-install">pipx install phantom-trace-ntfs</span>
+              <span>Read-only NTFS integrity checker — MFT vs cluster bitmap vs run lists.</span>
+            </div>
+            <div class="cv__tool">
+              <strong>manifest-trace</strong>
+              <span class="cv__tool-install">pip install manifest-trace</span>
+              <span>Batch-scans Android APKs for exported components, backup flags, and cleartext issues.</span>
+            </div>
+            <div class="cv__tool">
+              <strong>runtime-trace</strong>
+              <span class="cv__tool-install">pip install runtime-trace</span>
+              <span>eBPF-based Linux runtime checker for process hiding and fileless execution.</span>
+            </div>
+          </div>
+          <p class="cv__pypi-note">All packages: <a href="https://pypi.org/user/Jack_Sessions/" target="_blank" rel="noopener">pypi.org/user/Jack_Sessions</a></p>
+        </section>
+
+        <section class="cv__section">
+          <h2>Professional Experience</h2>
+
+          <div class="cv__role">
+            <div class="cv__role-head">
+              <strong>Digital Workplace Analyst</strong>
+              <span class="cv__company">UBank (NAB), Sydney NSW</span>
+              <span class="cv__date">May 2026 – Present</span>
+            </div>
+            <ul>
+              <li>Raised CIS Level 2 compliance from 63% to 94% across a 1,500-device fleet by auditing 1,200 Windows and 300 macOS endpoints via Intune and Jamf to remediate 212 control gaps.</li>
+              <li>Cut manual configuration review time by 85% (15 to 2 hours weekly) with custom PowerShell and Bash automation for baseline enforcement and drift detection.</li>
+              <li>Accelerated patch deployment by 78% (14 days to 3) by standardising Intune update rings and engineering automated remediation scripts.</li>
+            </ul>
+          </div>
+
+          <div class="cv__role">
+            <div class="cv__role-head">
+              <strong>Security Consultant</strong>
+              <span class="cv__company">Confidential — Energy, Law Enforcement, IoT and Defence clients</span>
+              <span class="cv__date">2023 – Present</span>
+            </div>
+            <ul>
+              <li>Discovered 26 critical vulnerabilities across 35 high-security defence, fin-tech and IoT mobile applications using a custom Frida-based dynamic analysis framework at runtime.</li>
+              <li>Managed 18+ incident response and ransomware containment engagements, reducing average mean time to contain by 42%; translated root-cause telemetry into durable Sigma and YARA detections.</li>
+              <li>De-risked deployments for six portfolio startups: secure AI agent workflows, vector database threat modelling and IR playbooks for LLM manipulation and quantisation attacks.</li>
+            </ul>
+          </div>
+
+          <div class="cv__role">
+            <div class="cv__role-head">
+              <strong>Security Engineer (Contract)</strong>
+              <span class="cv__company">Vaulted Ventures, Melbourne VIC</span>
+              <span class="cv__date">Feb 2025 – Dec 2025</span>
+            </div>
+            <ul>
+              <li>Designed and shipped a production one-time-pad module using Azure Key Vault and a custom hardware-backed TRNG compliant with NIST SP 800-90A.</li>
+              <li>Eliminated 96% of critical authentication defects pre-production across two delivery lifecycles via STRIDE threat modelling and secure code review; authored the security architecture roadmap supporting diligence with In-Q-Tel and Paris Capital.</li>
+            </ul>
+          </div>
+
+          <div class="cv__role">
+            <div class="cv__role-head">
+              <strong>Mobile Security Consultant (Contract)</strong>
+              <span class="cv__company">Mentra, San Francisco (remote)</span>
+              <span class="cv__date">Feb 2025 – Jun 2025</span>
+            </div>
+            <ul>
+              <li>Unblocked Google Play deployment for an enterprise smart-glasses IoT platform by identifying and mitigating 12 vulnerabilities, including five critical application and API flaws.</li>
+              <li>Authored a 320-page cryptographic and structural assessment mapped to OWASP MASVS M2 and M5, demonstrating live exploits across Android and iOS companion clients.</li>
+            </ul>
+          </div>
+
+          <div class="cv__role">
+            <div class="cv__role-head">
+              <strong>Security Advisor</strong>
+              <span class="cv__company">BQ, Cyber_Black, Vaulted Ventures</span>
+              <span class="cv__date">Jan 2023 – Present</span>
+            </div>
+            <ul>
+              <li>Advise founding teams across AI Security, Crypto and Defence on threat modelling, secure architecture and vulnerability hunting.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="cv__section">
+          <h2>Skills</h2>
+          <dl class="cv__skills">
+            <dt>Forensics &amp; IR</dt>
+            <dd>Mobile forensics (Android/iOS), memory analysis, NTFS and ext4 disk forensics, anti-forensics detection, timeline analysis, malware analysis, incident response, XDR, EDR</dd>
+            <dt>Offensive Security</dt>
+            <dd>Vulnerability research, reverse engineering (ARM64/x86), kernel exploitation, mobile penetration testing, Frida, Burp Suite, Ghidra, Metasploit</dd>
+            <dt>Programming &amp; Infrastructure</dt>
+            <dd>Python, PowerShell, Bash, C/C++, Go, Objective-C, ARM64 assembly; Proxmox, Docker, SIEM (Splunk/Elastic), Windows internals, cloud security, KQL, Google Cloud</dd>
+            <dt>AI &amp; Detection Engineering</dt>
+            <dd>LLM security assessment, vector database threat modelling, Sigma/YARA-L rule authoring, automated triage pipeline development, Cloudflare Workers</dd>
+          </dl>
+        </section>
+
+        <section class="cv__section">
+          <h2>Education &amp; Certifications</h2>
+          <div class="cv__edu">
+            <div class="cv__edu-row">
+              <span><strong>Bachelor of Computer Science</strong> — UNSW Sydney</span>
+              <span class="cv__date">Expected 2028</span>
+            </div>
+            <div class="cv__edu-row">
+              <span><strong>Diploma of Information Technology</strong> (Advanced Networking &amp; Cyber Security)</span>
+              <span class="cv__date">Dec 2025</span>
+            </div>
+            <div class="cv__edu-row">
+              <span>GCFA (SANS Institute) · GEIR (SANS Institute, In Progress) · BTL1 (Security Blue Team) · CompTIA Security+</span>
+              <span class="cv__date">2023–2026</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+    </div>
+  </section>
+</Page>
+
+<style>
+  .cv { max-width: 56rem; }
+  .cv__actions { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .cv__doc { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 2.5rem 3rem; }
+  @media (max-width: 44rem) { .cv__doc { padding: 1.5rem 1.25rem; } }
+
+  .cv__head { margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid var(--line); }
+  .cv__head h1 { margin: 0 0 0.5rem; font-size: clamp(1.6rem, 4vw, 2.2rem); letter-spacing: .04em; }
+  .cv__links { display: flex; flex-wrap: wrap; gap: 0.3rem 0.6rem; font-size: 0.85rem; margin-bottom: 0.9rem; }
+  .cv__links a { color: var(--accent); text-decoration: none; }
+  .cv__links a:hover { text-decoration: underline; }
+  .cv__summary { margin: 0; font-size: 0.88rem; line-height: 1.7; color: var(--muted); }
+
+  .cv__section { margin-bottom: 1.75rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--line); }
+  .cv__section:last-child { border-bottom: none; margin-bottom: 0; }
+  .cv__section h2 { font-size: 0.72rem; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); margin: 0 0 1rem; font-weight: 700; }
+
+  .cv__role { margin-bottom: 1.1rem; }
+  .cv__role:last-child { margin-bottom: 0; }
+  .cv__role-head { display: grid; grid-template-columns: auto 1fr auto; gap: 0.4rem 0.75rem; align-items: baseline; margin-bottom: 0.4rem; font-size: 0.9rem; }
+  @media (max-width: 44rem) { .cv__role-head { grid-template-columns: 1fr; } }
+  .cv__company { color: var(--muted); font-style: italic; font-size: 0.85rem; }
+  .cv__location { color: var(--muted); font-size: 0.82rem; }
+  .cv__date { color: var(--muted); font-size: 0.82rem; white-space: nowrap; justify-self: end; }
+  .cv__role ul { margin: 0.3rem 0 0 1.1rem; padding: 0; }
+  .cv__role li { font-size: 0.88rem; line-height: 1.65; color: var(--muted); margin-bottom: 0.3rem; }
+  .cv__role li a { color: var(--accent); }
+  .cv__role code { font-family: var(--font-mono); font-size: 0.82em; background: none; color: var(--accent); }
+
+  .cv__tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 0.5rem; }
+  @media (max-width: 44rem) { .cv__tools-grid { grid-template-columns: 1fr; } }
+  .cv__tool { background: color-mix(in oklab, var(--accent) 4%, var(--surface)); border: 1px solid var(--line); border-radius: 6px; padding: 0.65rem 0.85rem; display: grid; gap: 0.2rem; font-size: 0.85rem; }
+  .cv__tool strong { color: var(--fg); }
+  .cv__tool span { color: var(--muted); line-height: 1.5; }
+  .cv__tool-install { font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent) !important; }
+  .cv__pypi-note { font-size: 0.8rem; color: var(--muted); margin: 0.25rem 0 0; }
+  .cv__pypi-note a { color: var(--accent); }
+
+  .cv__skills { display: grid; grid-template-columns: 9rem 1fr; gap: 0.4rem 1rem; font-size: 0.87rem; margin: 0; }
+  @media (max-width: 44rem) { .cv__skills { grid-template-columns: 1fr; } }
+  .cv__skills dt { font-weight: 600; color: var(--fg); }
+  .cv__skills dd { margin: 0; color: var(--muted); line-height: 1.55; }
+
+  .cv__edu { display: grid; gap: 0.5rem; }
+  .cv__edu-row { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.88rem; flex-wrap: wrap; }
+  .cv__edu-row span:first-child { color: var(--muted); }
+
+  @media print {
+    .no-print { display: none !important; }
+    body, .cv__doc { background: #fff !important; color: #111 !important; border: none !important; }
+    .cv { max-width: 100%; }
+    .cv__doc { padding: 0; box-shadow: none; border: none; }
+    .cv__section h2 { color: #333; }
+    .cv__links a, .cv__role li a, .cv__pypi-note a { color: #1a5fb4; }
+    a { text-decoration: none; }
+    .cv__tool { border-color: #ddd; background: #f8f8f8; }
+  }
+</style>
