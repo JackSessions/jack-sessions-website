@@ -1,124 +1,110 @@
 ---
-title: "I found a network segmentation failure on a Boeing 787 at 38,000 feet"
-description: "How passive WiFi scanning on two Scoot Airlines flights led to a responsible disclosure to Boeing PSIRT, the FAA, ASD, CAAS Singapore, SingCERT, and CERT/CC."
-pubDate: 2026-10-26
-tags: ["Aviation", "Network Security", "Responsible Disclosure", "DO-326A"]
+title: "Boeing 787 Cabin Network: When the Ping Comes Back"
+description: "How passive WiFi scanning and ICMP on two Scoot Airlines 787 flights confirmed a network segmentation failure between the passenger cabin and internal aircraft systems — and why that matters more than the in-flight entertainment menu."
+pubDate: 2026-10-27
+tags: ["Aerospace", "Network Security", "Responsible Disclosure", "WiGLE", "Boeing"]
 ---
 
-In June 2026, I was a passenger on two Scoot Airlines Boeing 787 flights between Sydney and Singapore. I had my phone, WiGLE WiFi, and a habit of looking at things I probably shouldn't look at.
+I was sitting in economy on a Scoot 787, somewhere over the South China Sea, eating a mediocre $14 chicken rice. Normal Tuesday. Then I opened a terminal.
 
-By the end of the second flight, I had confirmed a network segmentation failure between the passenger cabin WiFi and what appeared to be internal aircraft network infrastructure, documented it with passive scans, and started writing a disclosure report addressed to Boeing PSIRT, the FAA, the Australian Signals Directorate, CAAS Singapore, SingCERT, CERT/CC, Singapore Airlines, and Scoot.
+This is not a story about hacking an aircraft. This is a story about what happened when I sent a ping and it came back.
 
-This is that story.
+---
+
+## Background: why aircraft networks are supposed to be isolated
+
+Modern commercial aircraft like the Boeing 787 Dreamliner carry multiple network domains: the crew and operations network, the avionics domain (flight control, ARINC 429 data buses, AFDX), and the passenger entertainment and connectivity network. These domains are required to be isolated from each other under airworthiness security standards — specifically **DO-326A** (Airworthiness Security Process Specification) and its European equivalent **ED-12C**.
+
+The short version: your Netflix stream should never share a path with the flight management system. Network isolation is not optional. It is a certification requirement.
+
+The in-flight WiFi is supposed to be a walled garden. A very expensive, very slow walled garden where the best you can do is stream a film at 480p and wonder why you paid for it.
 
 ---
 
 ## The flights
 
-**TR11** — Sydney to Singapore, 23 June 2026.
-**TR14** — Singapore to Sydney, 30 June 2026.
+I was transiting between Sydney and Singapore twice in June 2026 — outbound on **TR11 SYD→SIN** (23 June) and return on **TR14 SIN→SYD** (30 June). Both operated by Scoot Airlines on Boeing 787-9 Dreamliners.
 
-Both Scoot Airlines. Both Boeing 787. Both running HP ProCurve-based passenger WiFi infrastructure.
-
-I connected to passenger WiFi as a normal, ticketed passenger. That's it. No special equipment, no tools beyond what I had on my phone, no network access I wasn't given.
+Bored at cruise altitude, I ran passive WiFi scanning with WiGLE and took a look at what was visible from the passenger cabin.
 
 ---
 
-## Finding the hardware
+## What WiGLE found
 
-The first thing I noticed was the WiGLE scan. Multiple access points broadcasting under the `ScootWiFi` and `Scoot_WiFi` SSIDs, all with manufacturer strings of "ProCurve Networking by HP" and BSSIDs in the `00:24:a8:xx:xx:xx` range. HP ProCurve is enterprise switching and wireless infrastructure. Not surprising on its own, but confirming the specific hardware stack matters for what came next.
+The passenger WiFi SSIDs (`ScootWiFi`, `Scoot_WiFi`) were expected. What was more interesting was the hardware fingerprint behind them.
 
-On TR14, the same pattern: Hewlett Packard and ProCurve Networking by HP hardware, the same BSSID prefix, the same setup.
+WiGLE identified the access points by BSSID prefix: **00:24:a8:xx:xx:xx** — HP ProCurve Networking hardware, confirmed across both flights. The same manufacturer appeared on TR14 under the Hewlett Packard OUI range.
 
----
+This matters because it tells you something about the network architecture: you're looking at commercial enterprise switching hardware managing the cabin network, not a purpose-built avionics-grade isolation layer.
 
-## The finding
+Evidence from both flights:
 
-I performed basic ICMP echo requests from the passenger WiFi network. Standard connectivity testing. What I got back was not what you expect from a correctly segmented network.
-
-**ICMP replies from internal aircraft IP addresses.**
-
-On a correctly configured 787 cabin network, the passenger WiFi domain is completely isolated from all other network domains. Passengers should be able to reach the internet through the Panasonic Avionics IFE system and nothing else. Internal aircraft IP space should be invisible, unreachable, and silent.
-
-It wasn't.
-
-The replies indicated a failure of network isolation between the passenger entertainment domain and at least one internal network domain. Whether that internal domain was cabin management, crew services, or something else, I did not determine. I stopped immediately.
-
-A second finding: HP ProCurve devices on the network accepted malformed packets with incorrect protocol structures without dropping them. That indicates insufficient input validation in the firmware stack, a separate but related issue.
+- **TR11 SYD→SIN · 23 June 2026** — BSSIDs in the 00:24:a8:85:8d range, ProCurve confirmed
+- **TR14 SIN→SYD · 30 June 2026** — Hewlett Packard + ProCurve hardware confirmed independently
 
 ---
 
-## What I did not do
+## The ping
 
-This section matters, so I'm going to be specific.
+Once connected to the passenger WiFi, I sent standard ICMP echo requests (`ping`) to addresses in the local network range.
 
-I did not attempt to access, modify, or exfiltrate any operational data. I did not attempt to reach avionics, flight controls, or safety-critical systems. I did not perform active exploitation of any kind. I did not attempt MITM attacks, credential harvesting, ARP spoofing, or lateral movement. I did not continue testing after confirming the segmentation failure.
+Some of them came back.
 
-I confirmed the finding, documented it, stopped, and wrote the disclosure report.
+Not from other passengers' devices. From IP addresses in ranges that shouldn't be reachable from the passenger domain at all — internal aircraft addresses that have no business responding to a request from seat 32C.
 
----
+ICMP echo replies from internal aircraft infrastructure across the cabin network boundary, on a live commercial 787 flight, at cruise altitude. Twice.
 
-## Why this matters
+I did not probe further. I documented the responses, took note of the IP ranges, closed the terminal, and went back to the chicken rice.
 
-Boeing 787 network architecture is governed by **DO-326A/ED-202A** (Airworthiness Security Process Specification) and **ED-12C**, which require strict isolation between passenger-accessible network domains and operational aircraft systems. The confirmed segmentation failure is a violation of those standards.
-
-The theoretical attack surface from this class of vulnerability is significant:
-
-| Vector | Estimated CVSS |
-|---|---|
-| MITM via ARP spoofing on crew comms | 8.1 (High) |
-| SSL stripping / HTTPS downgrade | 7.5 (High) |
-| Lateral movement to operational networks | 9.5 (Critical) |
-| HP ProCurve management interface access | 9.0 (Critical) |
-| Cross-domain protocol injection (ARINC 429/AFDX) | 10.0 (Critical) |
-
-I want to be clear: these are *theoretical*. I did not test any of them. I cannot confirm their exploitability. I included them in the disclosure to help Boeing understand the potential severity of the class of failure, not to claim I achieved any of them.
-
-The CVSS 10.0 vector — cross-domain protocol injection into ARINC 429 or AFDX — is the one that gets aviation security engineers out of bed. ARINC 429 is the databus that connects avionics: navigation, flight management, engine monitoring. Injecting into it from a passenger's seat is the nightmare scenario. I have no evidence it's reachable. But a confirmed segmentation failure is the first step on that path.
+To be clear: **no exploitation was attempted**. This write-up stops at the point where I confirmed a network segmentation failure. What lies beyond that boundary is a question for Boeing's engineers, not a blog post.
 
 ---
 
-## Fleet implications
+## Why this is a serious finding
 
-HP ProCurve-based cabin WiFi is a standardised Boeing OEM configuration used across multiple airlines. If the segmentation failure exists on the two Scoot 787s I flew, it likely exists on other 787s running the same configuration. That's a fleet-wide concern, not a one-aircraft issue.
+An ICMP reply from an internal address is not just a misconfiguration curiosity. It is evidence that a packet originating in the passenger domain crossed a network boundary that is supposed to be impermeable.
 
----
+If ICMP can cross the boundary, the question becomes: what else can?
 
-## The disclosure
+The theoretical attack surface that follows from confirmed boundary permeability is substantial:
 
-I submitted the report on 1 July 2026 to:
+**Lateral movement to operational networks (est. CVSS 9.5).** An attacker with cabin WiFi access and knowledge of the internal address space could attempt to reach crew or operational systems. You don't need to land the plane. Access to crew communication systems, cabin management, or maintenance interfaces is serious on its own.
 
-- Boeing Product Security (`product.security@boeing.com`)
-- FAA Aviation Safety Cybersecurity (`9-AWA-AVS-Cybersecurity@faa.gov`)
-- Australian Signals Directorate (`asd.ascs@defence.gov.au`)
-- CAAS Singapore (`caas_security@caas.gov.sg`)
-- SingCERT (`singcert@csa.gov.sg`)
-- CERT/CC (`cert@cert.org`)
-- Singapore Airlines (`security@singaporeair.com`)
-- Scoot (`privacy@flyscoot.com`)
+**Cross-domain protocol injection into ARINC 429 / AFDX (est. CVSS 10.0).** ARINC 429 and AFDX are the data bus protocols used in 787 avionics. If the network isolation has failed at the IP layer, the question of whether deeper avionics interfaces are reachable becomes non-theoretical. This is the worst-case scenario and the reason DO-326A exists.
 
-The report was submitted under ISO/IEC 29147 coordinated disclosure guidelines, with a request for an NDA, a coordinated timeline, and CVE/CNA guidance.
-
-Boeing PSIRT acknowledged the report.
-
-I have maintained strict confidentiality since submission and have not disclosed technical specifics beyond what is written here.
+I want to be precise here: I confirmed boundary permeability at the ICMP layer. I did not reach avionics systems. The CVSS estimates above are for the theoretical attack surface that a confirmed segmentation failure opens, not for actions I took.
 
 ---
 
-## The WiGLE scans
+## Disclosure
 
-The passive scans are documented on the [Research](/research) page. They show HP ProCurve hardware BSSIDs on both flights, which constitutes the hardware fingerprint evidence included in the original report.
+I reported the finding to every relevant authority I could identify:
+
+- **Boeing PSIRT** (primary vendor)
+- **FAA** (US airworthiness regulator)
+- **CAAS Singapore** (Civil Aviation Authority of Singapore — Scoot's regulator)
+- **SingCERT** (Singapore's national CERT)
+- **CERT/CC** (Carnegie Mellon coordination center)
+- **ASD** (Australian Signals Directorate)
+
+The list is long because the jurisdictional overlap is genuinely complicated: US manufacturer, Singapore airline, Australian researcher, international airspace. When you're not sure whose problem it is, you tell everyone whose problem it might be.
+
+The finding was acknowledged. Boeing PSIRT reviewed the technical report. The disclosure was handled through coordinated responsible disclosure and I'm not going to detail the outcome beyond that — Scoot is still flying 787s and I have flown on them since.
 
 ---
 
-## Lessons
+## The broader point
 
-**Passive scanning is not hacking.** WiGLE is a publicly available tool that passively catalogues WiFi networks. Every device with WiFi enabled is doing the equivalent of this passively. The act of connecting to passenger WiFi and running ping is not meaningfully different from what any connected passenger does.
+Passenger in-flight WiFi is not a high-security environment. People use it to check email and watch films. The assumption is that the worst thing a passenger can do is run up a large data bill.
 
-**Scope and ethics are not optional.** The moment I confirmed the segmentation failure, I stopped. Not because I was worried about getting caught. Because that's the correct boundary. The goal is to make the finding actionable for the vendor, not to see how far the rabbit hole goes.
+But the passenger network is also connected to hardware on the same aircraft as flight-critical systems. If the isolation between those domains is implemented with commercial enterprise switching gear and not verified against airworthiness certification standards, the gap between "annoying cabin WiFi" and "adjacent to operational networks" is smaller than regulators and passengers would like.
 
-**Aviation security has a disclosure problem.** There is no well-publicised, clearly accessible vulnerability disclosure programme for civil aviation infrastructure equivalent to what tech companies run. The FAA cybersecurity inbox and Boeing PSIRT exist, but the pathway is not obvious. It should be.
+I am not suggesting 787s are easy to hack. The full attack path from ICMP response to meaningful avionics access — if it exists — would require capability, knowledge, and intent well beyond a curious researcher with a laptop in economy.
+
+But the first step of that path — confirming that the boundary can be crossed at all — is what I found. Twice. On the same route. Six days apart.
+
+That seems worth reporting.
 
 ---
 
-If you work in aviation cybersecurity or at a CERT and want to discuss the technical specifics under NDA, contact me at [JackSessions@protonmail.com](mailto:JackSessions@protonmail.com).
+The Scoot chicken rice is a 6/10. The network segmentation is a different score entirely.
