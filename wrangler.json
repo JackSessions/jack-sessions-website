@@ -10,5 +10,9 @@
 	"observability": {
 		"enabled": true
 	},
-	"upload_source_maps": true
+	"upload_source_maps": true,
+	"routes": [
+		{ "pattern": "jacksessions.dev/*", "zone_name": "jacksessions.dev" },
+		{ "pattern": "www.jacksessions.dev/*", "zone_name": "jacksessions.dev" }
+	]
 }
