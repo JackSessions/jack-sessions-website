@@ -1,0 +1,105 @@
+---
+import Page from '../layouts/Page.astro';
+
+const SECTIONS = [
+  {
+    title: 'Japan',
+    subtitle: 'Tokyo · BSides Tokyo · Akihabara · Shinjuku · Shibuya',
+    photos: [
+      { src: '/photos/japan/tokyo-street-01.jpg', alt: 'Jack Sessions in full black — cap, mask, Vans, Starbucks — at a Tokyo station', caption: 'Tokyo' },
+      { src: '/photos/japan/tokyo-street-02.jpg', alt: 'Jack Sessions in Tokyo carrying a sticker-covered laptop', caption: 'Tokyo — with the laptop' },
+      { src: '/photos/bsides-tokyo-banner.jpg', alt: 'BSides Tokyo conference banner with samurai illustration', caption: 'BSides Tokyo' },
+      { src: '/photos/japan/cat-cafe-akihabara.jpg', alt: 'Two cats in a cat tree at a cat cafe in Akihabara, Tokyo, street visible behind them', caption: 'Cat cafe — Akihabara' },
+      { src: '/photos/japan/welcome-to-japan.jpg', alt: 'Welcome to Japan Nintendo mural with Rosalina, Toad, and Daisy', caption: 'Welcome to Japan' },
+      { src: '/photos/japan/shibuya-karaoke-night.jpg', alt: 'Karaoke-kan sign lit up at night in Shibuya', caption: 'Shibuya at night' },
+      { src: '/photos/japan/kabukicho-night.jpg', alt: 'Don Quijote exterior at night in Kabukicho, Shinjuku', caption: 'Kabukicho, Shinjuku' },
+    ],
+  },
+  {
+    title: 'Eating well',
+    subtitle: 'Japan — ramen, omakase, kaiseki, Sushiro',
+    photos: [
+      { src: '/photos/japan/ramen-chashu.jpg', alt: 'Ramen bowl with thick chashu pork, nori, soft-boiled egg and shredded daikon', caption: 'Chashu ramen' },
+      { src: '/photos/japan/sushiro.jpg', alt: 'Six plates of sushi at Sushiro conveyor belt restaurant', caption: 'Sushiro — the right way' },
+      { src: '/photos/japan/kaiseki-opener.jpg', alt: 'Japanese kaiseki opening course on black lacquerware with multiple small bites', caption: 'Kaiseki opener' },
+      { src: '/photos/japan/wagyu-omakase.jpg', alt: 'Two slices of wagyu beef on a ceramic plate with a green garnish', caption: 'Wagyu' },
+      { src: '/photos/japan/sashimi-plate.jpg', alt: 'Sashimi on a blue-and-white ceramic plate with wasabi and garnish', caption: 'Sashimi' },
+    ],
+  },
+  {
+    title: 'Moments',
+    subtitle: 'Singapore · Hacker gear · Off the clock',
+    photos: [
+      { src: '/photos/interpol-pointing.jpg', alt: 'Jack Sessions smiling and pointing at the INTERPOL sign at INTERPOL HQ in Singapore', caption: 'INTERPOL HQ, Singapore' },
+      { src: '/photos/interpol-arms-crossed.jpg', alt: 'Jack Sessions arms crossed in front of the INTERPOL sign at INTERPOL HQ Singapore', caption: 'Just visiting' },
+      { src: '/photos/maniax-axe.jpg', alt: 'Jack Sessions mid-throw at Maniax axe throwing in Sydney', caption: 'Maniax, Sydney' },
+      { src: '/photos/life/wifi-attack-device.jpg', alt: 'WiFi attack device with LCD screen showing Sniffers, Wardriving, Attacks menu', caption: 'WiFi attack device' },
+      { src: '/photos/life/dji-drone.jpg', alt: 'DJI drone folded on a desk mat', caption: 'UAV research platform' },
+      { src: '/photos/life/nethunter-install.jpg', alt: 'Android phone screen showing Kali NetHunter installation via TWRP', caption: 'Kali NetHunter install' },
+    ],
+  },
+];
+---
+
+<Page title="Photos" description="Life outside the terminal — Japan, Singapore, hacker gear, and good food.">
+  <section class="section">
+    <div class="wrap photos-wrap">
+      <div class="section-head">
+        <h2>Photos</h2><span class="rule"></span>
+        <span class="count">life outside the terminal</span>
+      </div>
+
+      {SECTIONS.map((s) => (
+        <div class="photo-section">
+          <div class="photo-section__head">
+            <h3 class="photo-section__title">{s.title}</h3>
+            <span class="photo-section__sub">{s.subtitle}</span>
+          </div>
+          <div class="photo-grid">
+            {s.photos.map((p) => (
+              <figure class="photo-card">
+                <img src={p.src} alt={p.alt} loading="lazy" />
+                <figcaption>{p.caption}</figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+</Page>
+
+<style>
+  .photos-wrap { max-width: 72rem; }
+  .photo-section { margin-bottom: 3rem; }
+  .photo-section__head { margin-bottom: 1rem; display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+  .photo-section__title { margin: 0; font-size: 1.25rem; }
+  .photo-section__sub { font-size: 0.8rem; color: var(--muted); font-family: var(--font-mono); }
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.75rem;
+  }
+  .photo-card {
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .photo-card:hover { border-color: var(--accent); }
+  .photo-card img {
+    width: 100%;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    display: block;
+    border-bottom: 1px solid var(--line);
+  }
+  .photo-card figcaption {
+    padding: 0.45rem 0.7rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+  }
+</style>
