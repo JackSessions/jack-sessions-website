@@ -4,7 +4,9 @@ description: "A CLI for working with OSCAL (Open Security Controls Assessment La
 date: 2026-09-01
 repoUrl: "https://github.com/JackSessions/oscal-gov"
 url: "/blog/oscal-gov-policy-as-code-cli"
-status: "active"
+pypiUrl: "https://pypi.org/project/oscal-gov/"
+install: "pip install oscal-gov"
+status: "released"
 featured: false
 tags: ["compliance", "policy-as-code", "OSCAL", "python", "GovSec"]
 ---
