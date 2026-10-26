@@ -6,14 +6,15 @@ export const SITE_DESCRIPTION =
 
 // Shown in the header nav, left to right.
 export const NAV = [
-  { href: '/',         label: 'Home' },
-  { href: '/blog',     label: 'Blog' },
-  { href: '/projects', label: 'Projects' },
-  { href: '/talks',    label: 'Talks' },
-  { href: '/homelab',  label: 'Lab' },
-  { href: '/videos',   label: 'Videos' },
-  { href: '/music',    label: 'Music' },
-  { href: '/about',    label: 'About' },
+  { href: '/',          label: 'Home' },
+  { href: '/blog',      label: 'Blog' },
+  { href: '/projects',  label: 'Projects' },
+  { href: '/talks',     label: 'Talks' },
+  { href: '/research',  label: 'Research' },
+  { href: '/homelab',   label: 'Lab' },
+  { href: '/videos',    label: 'Videos' },
+  { href: '/music',     label: 'Music' },
+  { href: '/about',     label: 'About' },
 ] as const;
 
 // Footer + hero social links. Delete any you don't use.
