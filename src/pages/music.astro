@@ -20,6 +20,24 @@ const embeds = MUSIC.filter((r) => r.kind !== 'file');
         The other half of the split. Tracks, demos, and the occasional live set.
       </p>
 
+      <div class="rap-feature">
+        <div class="rap-feature__video">
+          <video
+            src="/music/rap-bw.mp4"
+            controls
+            playsinline
+            preload="metadata"
+            aria-label="Jack Sessions — rap video"
+          ></video>
+        </div>
+        <div class="rap-feature__info">
+          <span class="rap-label">Jack Sessions</span>
+          <h3>Original rap — live footage</h3>
+          <p>Security researcher, emcee, and occasional menace. Shot live. Converted to B&amp;W because everything hits harder in monochrome.</p>
+          <p style="color:var(--muted); font-size:0.85rem;">Higher-quality version coming to YouTube. The bars, however, remain lossless.</p>
+        </div>
+      </div>
+
       {tracks.length > 0 && <Montage />}
 
       {tracks.length > 0 && (
@@ -167,6 +185,13 @@ const embeds = MUSIC.filter((r) => r.kind !== 'file');
 </style>
 
 <style>
+  .rap-feature { display: grid; gap: 1.5rem; margin-bottom: 2rem; align-items: start; }
+  @media (min-width: 52rem) { .rap-feature { grid-template-columns: 1fr 1fr; } }
+  .rap-feature__video video { width: 100%; border-radius: var(--radius); border: 1px solid var(--line); display: block; background: #000; }
+  .rap-feature__info { display: grid; gap: 0.6rem; }
+  .rap-feature__info h3 { margin: 0; }
+  .rap-feature__info p { margin: 0; color: var(--muted); line-height: 1.6; }
+  .rap-label { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
   .focus-grid { display: grid; gap: 1rem; margin-bottom: 1.5rem; }
   @media (min-width: 48rem) { .focus-grid { grid-template-columns: repeat(3, 1fr); } }
   .focus-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.1rem; display: grid; gap: 0.25rem; }
