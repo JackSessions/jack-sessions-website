@@ -19,6 +19,9 @@ The short version: your Netflix stream should never share a path with the flight
 
 The in-flight WiFi is supposed to be a walled garden. A very expensive, very slow walled garden where the best you can do is stream a film at 480p and wonder why you paid for it.
 
+![Boeing 787 cabin network threat model — untrusted passenger zone, segmentation boundary, and restricted operational zone](/research/boeing-threat-model.jpg)
+*Threat model from the DefCamp "Cabin Pressure" talk: the segmentation boundary is the only thing keeping passenger Wi-Fi away from operational systems.*
+
 ---
 
 ## The flights
