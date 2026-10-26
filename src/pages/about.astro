@@ -17,7 +17,8 @@ const CVES = [
 const TOOLS = [
   { t: 'Hayabusa Lens', d: 'A dashboard for Hayabusa and Chainsaw with a 3D attack map and an AI investigator that keeps an audit trail of every question it asks.', install: 'pipx install hayabusa-lens', pypi: 'https://pypi.org/project/hayabusa-lens/', repo: 'https://github.com/JackSessions/hayabusa-lens', post: '/blog/hayabusa-lens-from-evtx-to-an-attack-story/' },
   { t: 'PhantomTrace', d: 'A read-only NTFS checker that compares the MFT, cluster bitmap and run lists and flags where they disagree, a possible sign of tampering.', install: 'pipx install phantom-trace-ntfs', pypi: 'https://pypi.org/project/phantom-trace-ntfs/', repo: 'https://github.com/JackSessions/PhantomTrace', post: '/blog/phantomtrace-checking-whether-ntfs-agrees-with-itself/' },
-  { t: 'oscal-gov', d: 'Policy-as-code CLI for NIST OSCAL governance: validate OSCAL files, gap-analyze controls, generate POA&Ms, and explain findings in plain language.', install: 'pip install oscal-gov', pypi: 'https://pypi.org/project/oscal-gov/', repo: 'https://github.com/JackSessions/oscal-gov', post: '/blog/oscal-gov-policy-as-code-cli' },
+  { t: 'manifest-trace', d: 'Batch-scans Android APK manifests for exposed components, backup flags, debuggable flags, and cleartext traffic issues. Fast triage for mobile pentesters.', install: 'pip install manifest-trace', pypi: 'https://pypi.org/project/manifest-trace/', repo: 'https://github.com/JackSessions/manifest-trace', post: null },
+  { t: 'runtime-trace', d: 'Linux runtime consistency checker using eBPF to detect process and module hiding and fileless execution. Built for DFIR and blue teams.', install: 'pip install runtime-trace', pypi: 'https://pypi.org/project/runtime-trace/', repo: 'https://github.com/JackSessions/runtime-trace', post: null },
 ];
 
 const STACK = [
@@ -71,7 +72,7 @@ const FOCUS = [
       </div>
 
       <h3>Published tools</h3>
-      <p class="muted more" style="margin-top:0">At 22, two open-source DFIR tools of mine are published on PyPI. <a href="/blog/at-22-two-dfir-tools-on-pypi-and-just-the-start/">Why that matters to me</a>.</p>
+      <p class="muted more" style="margin-top:0">Four open-source security tools on PyPI. <a href="https://pypi.org/user/Jack_Sessions/" target="_blank" rel="noopener">All packages ↗</a></p>
       <div class="grid grid--2 focus">
         {TOOLS.map((t) => (
           <div class="card">
@@ -80,7 +81,7 @@ const FOCUS = [
             <p>{t.d}</p>
             <code class="install">{t.install}</code>
             <div class="tags">
-              <a class="tag link" href={t.post}>write-up</a>
+              {t.post && <a class="tag link" href={t.post}>write-up</a>}
               <a class="tag link" href={t.repo} target="_blank" rel="noopener">GitHub ↗</a>
               <a class="tag link" href={t.pypi} target="_blank" rel="noopener">PyPI ↗</a>
             </div>
@@ -167,7 +168,7 @@ const FOCUS = [
   const LINES = [
     'Security Researcher — mobile, DFIR, vulnerability research.',
     "Bug bounty hunter for the US Diplomatic Security Service across 12 countries.",
-    'Three tools on PyPI. Presented at BSides Tokyo, SinCon Singapore, AVTOKYO.',
+    'Four tools on PyPI. 20+ responsible disclosures. 4 patents.',
     'Specialises in Android/iOS forensics, anti-forensics and counterintelligence.',
     'Computer Science @ UNSW. Currently breaking things so banks don\'t have to.',
   ];

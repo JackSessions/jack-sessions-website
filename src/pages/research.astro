@@ -78,8 +78,15 @@ const SEVERITY_COLOR: Record<string, string> = {
         <span class="count">responsible disclosure</span>
       </div>
 
+      <div class="stats-row">
+        <div class="stat"><span class="stat__n">20+</span><span class="stat__l">Responsible disclosures</span></div>
+        <div class="stat"><span class="stat__n">4</span><span class="stat__l">CVEs assigned</span></div>
+        <div class="stat"><span class="stat__n">4</span><span class="stat__l">Patents filed</span></div>
+        <div class="stat"><span class="stat__n">4</span><span class="stat__l">Tools on PyPI</span></div>
+      </div>
+
       <p class="lead">
-        Security vulnerabilities I've found and responsibly disclosed. All findings were reported to
+        Security vulnerabilities found and responsibly disclosed. All findings were reported to
         the relevant vendor or programme before publication, following coordinated disclosure best practice.
       </p>
 
@@ -107,10 +114,58 @@ const SEVERITY_COLOR: Record<string, string> = {
         ))}
       </div>
 
+      <blockquote class="testimonial">
+        <p>"After everything there was the after party where I was able to meet and chat with some super sick people especially <strong>Jack Sessions</strong> (he pwned Singpass btw). Bro is literally the embodiment of 'living on the edge' whilst being the sickest person ever."</p>
+        <cite>— Koh Tom Han, Wannabe Vulnerability Researcher · SinCon 2026</cite>
+      </blockquote>
+
+      <div class="section-head" style="margin-top:3rem">
+        <h2>Patents</h2><span class="rule"></span>
+      </div>
+      <p class="lead">Four patents filed across mobile security and digital forensics. Add your patent numbers and titles below.</p>
+      <div class="disc-grid">
+        <div class="disc">
+          <div class="disc__head">
+            <div><span class="disc__org">Patent 1</span><span class="disc__country">Fill in patent number and jurisdiction</span></div>
+            <div class="disc__badges"><span class="badge badge--status">Filed</span></div>
+          </div>
+          <strong class="disc__title">Patent title — update in src/pages/research.astro</strong>
+          <p class="disc__text">Add the patent abstract / description here.</p>
+          <div class="tags"><span class="tag">Mobile</span><span class="tag">Security</span></div>
+        </div>
+        <div class="disc">
+          <div class="disc__head">
+            <div><span class="disc__org">Patent 2</span><span class="disc__country">Fill in patent number and jurisdiction</span></div>
+            <div class="disc__badges"><span class="badge badge--status">Filed</span></div>
+          </div>
+          <strong class="disc__title">Patent title — update in src/pages/research.astro</strong>
+          <p class="disc__text">Add the patent abstract / description here.</p>
+          <div class="tags"><span class="tag">DFIR</span><span class="tag">Forensics</span></div>
+        </div>
+        <div class="disc">
+          <div class="disc__head">
+            <div><span class="disc__org">Patent 3</span><span class="disc__country">Fill in patent number and jurisdiction</span></div>
+            <div class="disc__badges"><span class="badge badge--status">Filed</span></div>
+          </div>
+          <strong class="disc__title">Patent title — update in src/pages/research.astro</strong>
+          <p class="disc__text">Add the patent abstract / description here.</p>
+          <div class="tags"><span class="tag">Android</span></div>
+        </div>
+        <div class="disc">
+          <div class="disc__head">
+            <div><span class="disc__org">Patent 4</span><span class="disc__country">Fill in patent number and jurisdiction</span></div>
+            <div class="disc__badges"><span class="badge badge--status">Filed</span></div>
+          </div>
+          <strong class="disc__title">Patent title — update in src/pages/research.astro</strong>
+          <p class="disc__text">Add the patent abstract / description here.</p>
+          <div class="tags"><span class="tag">iOS</span></div>
+        </div>
+      </div>
+
       <div class="section-head" style="margin-top:3rem">
         <h2>Tools</h2><span class="rule"></span>
       </div>
-      <p class="lead">Three open-source security tools on PyPI, each built to solve a real gap in DFIR and compliance workflows.</p>
+      <p class="lead">Four open-source security tools on PyPI. <a href="https://pypi.org/user/Jack_Sessions/" target="_blank" rel="noopener">See all on PyPI ↗</a></p>
       <div class="tool-list">
         <a class="tool" href="/blog/hayabusa-lens-from-evtx-to-an-attack-story/">
           <span class="tool__name">Hayabusa Lens</span>
@@ -122,10 +177,15 @@ const SEVERITY_COLOR: Record<string, string> = {
           <span class="tool__desc">Read-only NTFS integrity checker — MFT vs cluster bitmap vs run lists</span>
           <code class="tool__install">pipx install phantom-trace-ntfs</code>
         </a>
-        <a class="tool" href="/blog/oscal-gov-policy-as-code-cli">
-          <span class="tool__name">oscal-gov</span>
-          <span class="tool__desc">Policy-as-code CLI for NIST OSCAL governance and FedRAMP compliance</span>
-          <code class="tool__install">pip install oscal-gov</code>
+        <a class="tool" href="https://pypi.org/project/manifest-trace/" target="_blank" rel="noopener">
+          <span class="tool__name">manifest-trace</span>
+          <span class="tool__desc">Batch-scans Android APKs for exposed components, backup flags, cleartext issues</span>
+          <code class="tool__install">pip install manifest-trace</code>
+        </a>
+        <a class="tool" href="https://pypi.org/project/runtime-trace/" target="_blank" rel="noopener">
+          <span class="tool__name">runtime-trace</span>
+          <span class="tool__desc">eBPF-based Linux runtime checker for process hiding and fileless execution</span>
+          <code class="tool__install">pip install runtime-trace</code>
         </a>
       </div>
 
@@ -142,6 +202,14 @@ const SEVERITY_COLOR: Record<string, string> = {
 <style>
   .research { max-width: 58rem; }
   .lead { color: var(--muted); max-width: 64ch; margin: 0 0 1.5rem; }
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 0 0 2rem; }
+  @media (max-width: 40rem) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; display: grid; gap: 0.2rem; }
+  .stat__n { font-size: 2rem; font-weight: 800; color: var(--accent); line-height: 1; }
+  .stat__l { font-size: 0.78rem; color: var(--muted); }
+  .testimonial { border-left: 3px solid var(--accent); margin: 2rem 0; padding: 1rem 1.25rem; background: var(--surface); border-radius: 0 var(--radius) var(--radius) 0; }
+  .testimonial p { margin: 0 0 0.5rem; font-size: 0.95rem; line-height: 1.7; color: var(--muted); }
+  .testimonial cite { font-size: 0.8rem; color: var(--accent); font-style: normal; font-family: var(--font-mono); }
   .disc-grid { display: grid; gap: 1rem; }
   .disc { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.25rem; display: grid; gap: 0.35rem; }
   .disc:hover { border-color: var(--accent); }
