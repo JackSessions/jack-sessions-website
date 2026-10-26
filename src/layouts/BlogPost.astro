@@ -7,79 +7,203 @@ import FormattedDate from '../components/FormattedDate.astro';
 
 type Props = CollectionEntry<'blog'>['data'];
 
-const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.props;
+
+// Estimate reading time from description length (rough proxy — no body access here)
+// The actual word count is in the rendered content, but we can set a reasonable default
 ---
 
 <html lang="en">
-	<head>
-		<BaseHead title={title} description={description} />
-		<style>
-			main {
-				width: calc(100% - 2em);
-				max-width: 100%;
-				margin: 0;
-			}
-			.hero-image {
-				width: 100%;
-			}
-			.hero-image img {
-				display: block;
-				margin: 0 auto;
-				border-radius: 12px;
-				box-shadow: var(--box-shadow);
-			}
-			.prose {
-				width: 720px;
-				max-width: calc(100% - 2em);
-				margin: auto;
-				padding: 1em;
-				color: rgb(var(--gray-dark));
-			}
-			.title {
-				margin-bottom: 1em;
-				padding: 1em 0;
-				text-align: center;
-				line-height: 1;
-			}
-			.title h1 {
-				margin: 0 0 0.5em 0;
-			}
-			.date {
-				margin-bottom: 0.5em;
-				color: rgb(var(--gray));
-			}
-			.last-updated-on {
-				font-style: italic;
-			}
-		</style>
-	</head>
-
-	<body>
-		<Header />
-		<main>
-			<article>
-				<div class="hero-image">
-					{heroImage && <img width={1020} height={510} src={heroImage} alt="" />}
-				</div>
-				<div class="prose">
-					<div class="title">
-						<div class="date">
-							<FormattedDate date={pubDate} />
-							{
-								updatedDate && (
-									<div class="last-updated-on">
-										Last updated on <FormattedDate date={updatedDate} />
-									</div>
-								)
-							}
-						</div>
-						<h1>{title}</h1>
-						<hr />
-					</div>
-					<slot />
-				</div>
-			</article>
-		</main>
-		<Footer />
-	</body>
+  <head>
+    <BaseHead title={title} description={description} />
+  </head>
+  <body>
+    <Header />
+    <main>
+      <article class="post-wrap">
+        {heroImage && (
+          <div class="post-hero">
+            <img src={heroImage} alt="" width="1020" height="510" />
+          </div>
+        )}
+        <header class="post-header">
+          <div class="post-meta">
+            <FormattedDate date={pubDate} />
+            {updatedDate && (
+              <span class="post-updated">· Updated <FormattedDate date={updatedDate} /></span>
+            )}
+          </div>
+          <h1 class="post-title">{title}</h1>
+          {description && <p class="post-desc">{description}</p>}
+          {tags && tags.length > 0 && (
+            <div class="tags">
+              {tags.map((t: string) => <span class="tag">{t}</span>)}
+            </div>
+          )}
+        </header>
+        <div class="post-body prose">
+          <slot />
+        </div>
+        <footer class="post-footer">
+          <a class="btn btn--ghost" href="/blog">← All posts</a>
+        </footer>
+      </article>
+    </main>
+    <Footer />
+  </body>
 </html>
+
+<style>
+  .post-wrap {
+    max-width: 52rem;
+    margin: 0 auto;
+    padding: 0 1rem 4rem;
+  }
+  .post-hero {
+    margin: 0 -1rem 2rem;
+  }
+  .post-hero img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+  }
+  .post-header {
+    padding: 2rem 0 1.5rem;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 2rem;
+  }
+  .post-meta {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+    letter-spacing: .06em;
+  }
+  .post-updated { color: var(--muted); }
+  .post-title {
+    font-size: clamp(1.7rem, 4vw, 2.6rem);
+    line-height: 1.2;
+    letter-spacing: -.01em;
+    margin: 0 0 0.75rem;
+    color: var(--text);
+  }
+  .post-desc {
+    color: var(--muted);
+    font-size: 1.05rem;
+    line-height: 1.6;
+    margin: 0 0 1rem;
+    max-width: 60ch;
+  }
+
+  /* --- Prose body ---------------------------------------- */
+  .prose {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.8;
+  }
+  .prose :global(h2) {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 2.5rem 0 0.75rem;
+    letter-spacing: -.01em;
+  }
+  .prose :global(h3) {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 2rem 0 0.5rem;
+  }
+  .prose :global(h4) {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 1.5rem 0 0.4rem;
+  }
+  .prose :global(p) { margin: 0 0 1.1rem; }
+  .prose :global(a) { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  .prose :global(a:hover) { color: var(--text); }
+  .prose :global(strong) { color: var(--text); font-weight: 600; }
+  .prose :global(em) { color: var(--text); }
+  .prose :global(ul), .prose :global(ol) {
+    margin: 0 0 1.1rem 1.4rem;
+    padding: 0;
+  }
+  .prose :global(li) { margin-bottom: 0.4rem; }
+  .prose :global(blockquote) {
+    border-left: 3px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 0.75rem 1.25rem;
+    background: var(--surface);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    color: var(--text);
+    font-style: italic;
+  }
+  .prose :global(hr) {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 2rem 0;
+  }
+  .prose :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0.1em 0.4em;
+    color: var(--accent);
+  }
+  .prose :global(pre) {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+    overflow-x: auto;
+    margin: 0 0 1.5rem;
+    font-size: 0.88rem;
+    line-height: 1.65;
+  }
+  .prose :global(pre code) {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--text);
+    font-size: inherit;
+  }
+  .prose :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 1.5rem;
+    font-size: 0.9rem;
+  }
+  .prose :global(th) {
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 600;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--line);
+    text-align: left;
+  }
+  .prose :global(td) {
+    padding: 0.55rem 0.9rem;
+    border: 1px solid var(--line);
+    color: var(--muted);
+  }
+  .prose :global(tr:hover td) { background: var(--surface); }
+  .prose :global(img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    display: block;
+    margin: 1.5rem 0;
+  }
+
+  .post-footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--line);
+  }
+</style>
