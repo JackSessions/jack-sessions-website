@@ -78,6 +78,32 @@ const embeds = MUSIC.filter((r) => r.kind !== 'file');
         </div>
       )}
 
+      <div class="section-head" style="margin-top:2.5rem">
+        <h2>What I code to</h2><span class="rule"></span>
+      </div>
+      <p style="color:var(--muted); max-width:58ch; margin-bottom:1rem;">
+        When I need to actually focus, I put on Jeremy Soule's Skyrim and Oblivion OSTs. Something about
+        orchestral ambient with no vocals keeps the brain engaged without burning it out. Morrowind's
+        soundtrack hits different for late-night reversing sessions.
+      </p>
+      <div class="focus-grid">
+        <div class="focus-card">
+          <span class="focus-label">The Elder Scrolls V: Skyrim</span>
+          <span class="focus-note">Jeremy Soule · 2011 · orchestral ambient</span>
+          <p>Distant Horizons and Far Horizons are permanent fixtures on my coding playlist. Timeless.</p>
+        </div>
+        <div class="focus-card">
+          <span class="focus-label">The Elder Scrolls IV: Oblivion</span>
+          <span class="focus-note">Jeremy Soule · 2006 · orchestral ambient</span>
+          <p>Sunrise of Flutes and Auriel's Ascension. Criminally underrated for deep work.</p>
+        </div>
+        <div class="focus-card">
+          <span class="focus-label">The Elder Scrolls III: Morrowind</span>
+          <span class="focus-note">Jeremy Soule · 2002 · ambient</span>
+          <p>Call of Magic at midnight while reverse engineering something. Nothing else comes close.</p>
+        </div>
+      </div>
+
       <Collab />
     </div>
   </section>
@@ -138,4 +164,13 @@ const embeds = MUSIC.filter((r) => r.kind !== 'file');
   .release__yt { position: relative; aspect-ratio: 16 / 9; }
   .release__yt iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
   .release figcaption { color: var(--muted); font-size: 0.85rem; padding: 0.5rem 0.4rem 0.2rem; }
+</style>
+
+<style>
+  .focus-grid { display: grid; gap: 1rem; margin-bottom: 1.5rem; }
+  @media (min-width: 48rem) { .focus-grid { grid-template-columns: repeat(3, 1fr); } }
+  .focus-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.1rem; display: grid; gap: 0.25rem; }
+  .focus-label { font-weight: 600; font-size: 0.95rem; }
+  .focus-note { font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); }
+  .focus-card p { margin: 0.4rem 0 0; color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
 </style>

@@ -1,0 +1,42 @@
+---
+import Page from '../layouts/Page.astro';
+---
+
+<Page title="404 — Not Found" description="Page not found.">
+  <section class="section">
+    <div class="wrap four">
+      <pre class="term">
+<span class="p">~/jack</span> $ curl jacksessions.dev<span class="path">{Astro.url.pathname}</span>
+<span class="err">curl: (404) Not Found</span>
+<span class="muted">
+The page you're looking for doesn't exist.
+It may have moved, or you typed the URL wrong.</span>
+
+<span class="p">~/jack</span> $ ls ~/
+  <a href="/">home</a>    <a href="/blog">blog</a>    <a href="/projects">projects</a>
+  <a href="/talks">talks</a>   <a href="/about">about</a>   <a href="/contact">contact</a>
+</pre>
+      <a class="btn" href="/">Go home</a>
+    </div>
+  </section>
+</Page>
+
+<style>
+  .four { max-width: 44rem; }
+  .term {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    margin: 0 0 1.5rem;
+    overflow-x: auto;
+  }
+  .term a { color: var(--accent); text-decoration: none; }
+  .term a:hover { text-decoration: underline; }
+  .p { color: var(--accent-2); }
+  .path { color: var(--accent); }
+  .err { color: #f38ba8; }
+</style>

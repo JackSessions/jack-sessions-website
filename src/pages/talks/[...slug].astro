@@ -1,0 +1,73 @@
+---
+import { getCollection, render } from 'astro:content';
+import Page from '../../layouts/Page.astro';
+
+export async function getStaticPaths() {
+  const talks = await getCollection('talks');
+  return talks.map((t) => ({ params: { slug: t.id }, props: { talk: t } }));
+}
+
+const { talk } = Astro.props;
+const { Content } = await render(talk);
+
+const d = talk.data;
+const fmt = (date: Date, precision = 'day') => {
+  if (precision === 'year') return String(date.getFullYear());
+  if (precision === 'month') return date.toLocaleDateString('en-AU', { year: 'numeric', month: 'long' });
+  return date.toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' });
+};
+---
+
+<Page title={d.title} description={d.description}>
+  <article class="section">
+    <div class="wrap talk">
+      <header class="talk__head">
+        <p class="meta">{d.event}{d.location ? ` · ${d.location}` : ''} · {fmt(d.date, d.datePrecision)}</p>
+        <h1>{d.title}</h1>
+        <p class="desc">{d.description}</p>
+        <div class="tags">
+          {d.tags.map((tag) => <span class="tag">{tag}</span>)}
+          {d.slidesUrl && <a class="tag link" href={d.slidesUrl} target="_blank" rel="noopener">slides ↗</a>}
+          {d.slidesPptxUrl && <a class="tag link" href={d.slidesPptxUrl} download>{d.slidesUrl ? 'pptx ↓' : 'slides (pptx) ↓'}</a>}
+          {d.videoUrl && <a class="tag link" href={d.videoUrl} target="_blank" rel="noopener">recording ↗</a>}
+        </div>
+      </header>
+
+      {d.videoUrl && d.videoUrl.includes('youtube') && (
+        <div class="embed">
+          <iframe
+            src={`https://www.youtube.com/embed/${d.videoUrl.match(/(?:v=|youtu\.be\/)([\w-]{11})/)?.[1]}`}
+            title={d.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            loading="lazy"
+          ></iframe>
+        </div>
+      )}
+
+      <div class="prose">
+        <Content />
+      </div>
+
+      <footer class="talk__foot">
+        <a href="/talks">← All talks</a>
+      </footer>
+    </div>
+  </article>
+</Page>
+
+<style>
+  .talk { max-width: 52rem; }
+  .talk__head { margin-bottom: 2rem; }
+  .talk__head h1 { margin: 0.4rem 0 0.8rem; font-size: clamp(1.4rem, 4vw, 2rem); }
+  .desc { color: var(--muted); max-width: 62ch; margin: 0 0 1rem; }
+  .embed { position: relative; padding-top: 56.25%; margin: 0 0 2rem; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); }
+  .embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .prose { line-height: 1.75; }
+  .prose :global(h2) { margin: 2rem 0 0.8rem; }
+  .prose :global(pre) { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; overflow-x: auto; }
+  .prose :global(code) { font-family: var(--font-mono); font-size: 0.9em; }
+  .talk__foot { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+  .talk__foot a { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+  .talk__foot a:hover { color: var(--fg); }
+</style>
