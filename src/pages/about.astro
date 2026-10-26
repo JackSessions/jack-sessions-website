@@ -17,6 +17,15 @@ const CVES = [
 const TOOLS = [
   { t: 'Hayabusa Lens', d: 'A dashboard for Hayabusa and Chainsaw with a 3D attack map and an AI investigator that keeps an audit trail of every question it asks.', install: 'pipx install hayabusa-lens', pypi: 'https://pypi.org/project/hayabusa-lens/', repo: 'https://github.com/JackSessions/hayabusa-lens', post: '/blog/hayabusa-lens-from-evtx-to-an-attack-story/' },
   { t: 'PhantomTrace', d: 'A read-only NTFS checker that compares the MFT, cluster bitmap and run lists and flags where they disagree, a possible sign of tampering.', install: 'pipx install phantom-trace-ntfs', pypi: 'https://pypi.org/project/phantom-trace-ntfs/', repo: 'https://github.com/JackSessions/PhantomTrace', post: '/blog/phantomtrace-checking-whether-ntfs-agrees-with-itself/' },
+  { t: 'oscal-gov', d: 'Policy-as-code CLI for NIST OSCAL governance: validate OSCAL files, gap-analyze controls, generate POA&Ms, and explain findings in plain language.', install: 'pip install oscal-gov', pypi: 'https://pypi.org/project/oscal-gov/', repo: 'https://github.com/JackSessions/oscal-gov', post: '/blog/oscal-gov-policy-as-code-cli' },
+];
+
+const STACK = [
+  { cat: 'Languages', items: ['Python', 'Kotlin', 'Java', 'Bash', 'C', 'TypeScript'] },
+  { cat: 'Mobile & RE', items: ['Frida', 'jadx', 'apktool', 'objection', 'ADB', 'MobSF', 'Ghidra', 'IDA Free'] },
+  { cat: 'DFIR & Forensics', items: ['Volatility 3', 'Hayabusa', 'Chainsaw', 'KAPE', 'Autopsy', 'Velociraptor', 'FTK Imager', 'Cellebrite'] },
+  { cat: 'Offensive & Research', items: ['Burp Suite Pro', 'Metasploit', 'Nmap', 'Wireshark', 'CyberChef', 'Nuclei'] },
+  { cat: 'Cloud & Infra', items: ['Docker', 'GitHub Actions', 'Cloudflare Workers', 'Linux', 'Wazuh', 'Splunk'] },
 ];
 
 const FOCUS = [
@@ -79,6 +88,18 @@ const FOCUS = [
         ))}
       </div>
 
+      <h3>Tech stack</h3>
+      <div class="stack">
+        {STACK.map((s) => (
+          <div class="stack__row">
+            <span class="stack__cat">{s.cat}</span>
+            <div class="stack__chips">
+              {s.items.map((i) => <span class="chip">{i}</span>)}
+            </div>
+          </div>
+        ))}
+      </div>
+
       <h3>Research &amp; recognition</h3>
       <div class="cves">
         {CVES.map((c) => (
@@ -124,10 +145,11 @@ const FOCUS = [
   // Typewriter: types each bio line, holds, deletes, moves on.
   const el = document.querySelector<HTMLElement>('[data-type]');
   const LINES = [
-    'Security Researcher (Mobile).',
-    "Bounty hunter for the US Diplomatic Security Service, helping 12 countries' security services find and track cyber criminals.",
-    'Contributes to many open source projects with a focus on mobile security and AppSec.',
-    'Works on phone and device security, particularly anti-forensics and counter intelligence.',
+    'Security Researcher — mobile, DFIR, vulnerability research.',
+    "Bug bounty hunter for the US Diplomatic Security Service across 12 countries.",
+    'Three tools on PyPI. Presented at BSides Tokyo, SinCon Singapore, AVTOKYO.',
+    'Specialises in Android/iOS forensics, anti-forensics and counterintelligence.',
+    'Computer Science @ UNSW. Currently breaking things so banks don\'t have to.',
   ];
   if (el && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
     let li = 0, ci = 0, del = false;
@@ -169,4 +191,10 @@ const FOCUS = [
   .certs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 1.5rem 2.5rem; }
   .certs li { display: flex; align-items: center; gap: 0.9rem; }
   .certs img { object-fit: contain; }
+  .stack { display: grid; gap: 0.65rem; }
+  .stack__row { display: grid; grid-template-columns: 10rem 1fr; gap: 0.75rem; align-items: start; padding: 0.6rem 0; border-bottom: 1px solid var(--line); }
+  @media (max-width: 40rem) { .stack__row { grid-template-columns: 1fr; gap: 0.3rem; } }
+  .stack__cat { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); text-transform: uppercase; letter-spacing: .08em; padding-top: 0.2rem; }
+  .stack__chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .chip { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 0.2rem 0.6rem; font-size: 0.82rem; color: var(--muted); }
 </style>
