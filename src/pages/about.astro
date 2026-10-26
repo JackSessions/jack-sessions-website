@@ -143,6 +143,16 @@ const FOCUS = [
         </div>
       </div>
 
+      <h3>Recognition</h3>
+      <div class="recognition-grid">
+        <div class="rec-card rec-card--featured">
+          <span class="rec-card__org">CeylonCon Ambassador Programme</span>
+          <strong class="rec-card__title">Australia Ambassador</strong>
+          <p class="rec-card__text">Official community representative for CeylonCon — Sri Lanka's annual technology conference run by the Ceylon Computer Foundation. Bridging the security research communities of Australia and Sri Lanka.</p>
+          <div class="tags"><span class="tag">CeylonCon</span><span class="tag">Sri Lanka 🇱🇰 · Australia 🇦🇺</span></div>
+        </div>
+      </div>
+
       <h3>Certifications</h3>
       <ul class="certs">
         {CERTS.map((c) => (
@@ -209,6 +219,12 @@ const FOCUS = [
   .reel figure { margin: 0; flex: 0 0 min(85%, 24rem); scroll-snap-align: start; }
   .reel img { width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--line); display: block; }
   .reel figcaption { margin-top: 0.4rem; color: var(--muted); font-size: 0.85rem; }
+  .recognition-grid { display: grid; gap: 0.75rem; margin-bottom: 0.5rem; }
+  .rec-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.25rem; display: grid; gap: 0.3rem; }
+  .rec-card--featured { border-color: var(--accent); }
+  .rec-card__org { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+  .rec-card__title { font-size: 1rem; }
+  .rec-card__text { color: var(--muted); font-size: 0.88rem; line-height: 1.6; margin: 0; }
   .certs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 1.5rem 2.5rem; }
   .certs li { display: flex; align-items: center; gap: 0.9rem; }
   .certs img { object-fit: contain; }
