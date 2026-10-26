@@ -57,14 +57,14 @@ const SECTIONS = [
           </div>
           <div class="photo-grid">
             {s.photos.map((p) => (
-              <figure class="photo-card">
+              <figure class="photo-card" data-lightbox data-src={p.src} data-alt={p.alt} data-caption={p.caption}>
                 <img src={p.src} alt={p.alt} loading="lazy" />
                 <figcaption>{p.caption}</figcaption>
               </figure>
             ))}
             {s.title === 'Moments' && (
               <figure class="photo-card jazz-card">
-                <img src="/photos/life/thailand-jazz-bar.jpg" alt="Jazz bar in Thailand — low light, live band on stage" loading="lazy" />
+                <img src="/photos/life/thailand-jazz-bar.jpg" alt="Jazz bar in Thailand, low light, live band on stage" loading="lazy" />
                 <figcaption>
                   Random jazz bar, Thailand
                   <audio controls class="jazz-audio" src="/photos/life/thailand-jazz-bar.mp3">
@@ -115,4 +115,84 @@ const SECTIONS = [
   }
   .jazz-card figcaption { display: grid; gap: 0.5rem; }
   .jazz-audio { width: 100%; height: 32px; accent-color: var(--accent); }
+
+  /* lightbox */
+  #lightbox {
+    padding: 0;
+    border: none;
+    background: transparent;
+    max-width: 100vw;
+    max-height: 100vh;
+    width: 100%;
+    height: 100%;
+  }
+  #lightbox::backdrop { background: rgba(0,0,0,0.88); }
+  .lb-inner {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+  #lb-img {
+    max-width: min(90vw, 1100px);
+    max-height: 82vh;
+    width: auto;
+    height: auto;
+    border-radius: var(--radius);
+    box-shadow: 0 8px 48px rgba(0,0,0,0.6);
+    display: block;
+  }
+  #lb-caption {
+    color: #e0e0e0;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    text-align: center;
+  }
+  #lb-close {
+    position: fixed;
+    top: 1rem;
+    right: 1.25rem;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+    z-index: 10;
+  }
+  #lb-close:hover { opacity: 1; }
+  [data-lightbox] { cursor: zoom-in; }
 </style>
+
+<dialog id="lightbox" aria-label="Photo lightbox" aria-modal="true">
+  <div class="lb-inner">
+    <button id="lb-close" aria-label="Close lightbox">&times;</button>
+    <img id="lb-img" src="" alt="" />
+    <p id="lb-caption"></p>
+  </div>
+</dialog>
+
+<script>
+  const lb = document.getElementById('lightbox') as HTMLDialogElement;
+  const lbImg = document.getElementById('lb-img') as HTMLImageElement;
+  const lbCap = document.getElementById('lb-caption') as HTMLParagraphElement;
+
+  document.querySelectorAll<HTMLElement>('[data-lightbox]').forEach((card) => {
+    card.addEventListener('click', () => {
+      lbImg.src = card.dataset.src ?? '';
+      lbImg.alt = card.dataset.alt ?? '';
+      lbCap.textContent = card.dataset.caption ?? '';
+      lb.showModal();
+    });
+  });
+
+  document.getElementById('lb-close')!.addEventListener('click', () => lb.close());
+  lb.addEventListener('click', (e) => { if (e.target === lb) lb.close(); });
+  lb.addEventListener('keydown', (e) => { if (e.key === 'Escape') lb.close(); });
+</script>
