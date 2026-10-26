@@ -13,4 +13,5 @@ export const GALLERY: { src: string; alt: string; caption?: string }[] = [
   { src: '/photos/bsides-cbr-duck.jpg', alt: 'Jack Sessions with the BSides Canberra duck mascot at The Grifter bar afterparty', caption: 'BSides Canberra II afterparty' },
   { src: '/photos/sincon-group-large.jpg', alt: 'Jack Sessions with a large group at SinCon 2026 Singapore', caption: 'SinCon 2026 crew' },
   { src: '/photos/research-car-infotainment.jpg', alt: 'Car infotainment cluster and head unit in a Pelican case — automotive security research', caption: 'Automotive security research' },
+  { src: '/photos/maniax-axe.jpg', alt: 'Jack Sessions mid-throw at Maniax axe throwing in Sydney', caption: 'Off the clock — Maniax' },
 ];
